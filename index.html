@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Vouchers - Mecânica Brasil & Parque das Águas</title>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { 
+    getFirestore, collection, doc, setDoc, getDocs, updateDoc, deleteDoc, 
+    query, where, orderBy, addDoc, serverTimestamp 
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDqBMPsW1DYtzC8p7bMV3q7eYLqJZIHGL8",
+    authDomain: "mecanica-brasil-vouchers.firebaseapp.com",
+    projectId: "mecanica-brasil-vouchers",
+    storageBucket: "mecanica-brasil-vouchers.firebasestorage.app",
+    messagingSenderId: "827648839499",
+    appId: "1:827648839499:web:f5dd8934f49a03b85fe2ce"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Expor para o resto do código
+  window.firebaseDB = db;
+  window.firestoreFns = { collection, doc, setDoc, getDocs, updateDoc, deleteDoc, query, where, orderBy, addDoc };
+  window.firebaseReady = true;
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+<script>
+  if (window['pdfjsLib']) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+  body { background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 20px; }
+  .header { text-align: center; padding: 24px 16px; background: linear-gradient(135deg, #1e293b, #334155); border-radius: 12px; margin-bottom: 24px; border: 1px solid #475569; }
+  .header h1 { font-size: 24px; color: #f1f5f9; margin-bottom: 6px; }
+  .header p { color: #94a3b8; font-size: 13px; }
+  .sync-indicator { display: inline-block; margin-left: 10px; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .sync-indicator.online { background: rgba(16,185,129,0.2); color: #10b981; }
+  .sync-indicator.offline { background: rgba(239,68,68,0.2); color: #ef4444; }
+  .sync-indicator.syncing { background: rgba(59,130,246,0.2); color: #3b82f6; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab { flex: 1; min-width: 140px; padding: 14px 18px; background: #1e293b; border: 1px solid #334155; border-radius: 10px; color: #cbd5e1; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+  .tab.active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border-color: #2563eb; }
+  .tab:hover { background: #334155; }
+  .tab.active:hover { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+  .panel { display: none; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 28px; }
+  .panel.active { display: block; }
+  .panel h2 { color: #f1f5f9; font-size: 20px; margin-bottom: 6px; }
+  .panel .subtitle { color: #94a3b8; font-size: 13px; margin-bottom: 24px; }
+  .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  label { font-size: 12px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  label .hint { color: #10b981; text-transform: none; font-weight: 400; font-size: 11px; }
+  input[type="text"], input[type="tel"], input[type="file"], select, textarea { padding: 12px 14px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 14px; font-family: inherit; }
+  input[type="file"] { padding: 10px; cursor: pointer; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; }
+  input.auto-filled { border-color: #10b981; background: rgba(16, 185, 129, 0.05); }
+  textarea { resize: vertical; min-height: 80px; }
+  .file-info { margin-top: 6px; font-size: 12px; color: #10b981; }
+  .file-info.error { color: #f59e0b; }
+  .extracted-data { margin-top: 14px; padding: 14px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; display: none; }
+  .extracted-data.show { display: block; }
+  .extracted-data h4 { font-size: 12px; color: #10b981; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .extracted-data .item { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+  .extracted-data .item span:first-child { color: #94a3b8; }
+  .extracted-data .item span:last-child { color: #f1f5f9; font-weight: 600; }
+  .extracted-data .item.missing span:last-child { color: #f59e0b; }
+  .btn { padding: 14px 24px; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 8px; }
+  .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); }
+  .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
+  .btn-whatsapp { background: linear-gradient(135deg, #25d366, #128c7e); }
+  .btn-secondary { background: #475569; }
+  .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+  .btn-camera { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .alert { padding: 12px 16px; background: rgba(59, 130, 246, 0.15); border-left: 4px solid #3b82f6; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: #cbd5e1; }
+  .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid #94a3b8; border-top-color: #10b981; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 28px; max-width: 500px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .modal h3 { color: #ef4444; font-size: 18px; margin-bottom: 8px; }
+  .modal p { color: #cbd5e1; font-size: 13px; margin-bottom: 18px; line-height: 1.5; }
+  .modal .voucher-summary { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 18px; font-size: 13px; }
+  .modal .voucher-summary div { padding: 3px 0; }
+  .modal .voucher-summary strong { color: #f1f5f9; }
+  .char-counter { font-size: 11px; color: #94a3b8; margin-top: 4px; text-align: right; }
+  .char-counter.ok { color: #10b981; }
+  .char-counter.error { color: #ef4444; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .modal-actions .btn { margin-top: 0; }
+
+  .voucher-wrapper { margin-top: 28px; display: none; }
+  .voucher-wrapper.show { display: block; }
+  .voucher-card { width: 400px; max-width: 100%; margin: 0 auto; background: linear-gradient(160deg, #00b4d8 0%, #0077b6 50%, #023e8a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); color: #fff; position: relative; }
+  .voucher-top { padding: 24px 24px 16px; text-align: center; background: rgba(255,255,255,0.08); border-bottom: 2px dashed rgba(255,255,255,0.3); position: relative; }
+  .voucher-top::before, .voucher-top::after { content: ''; position: absolute; bottom: -12px; width: 24px; height: 24px; background: #1e293b; border-radius: 50%; }
+  .voucher-top::before { left: -12px; }
+  .voucher-top::after { right: -12px; }
+  .voucher-emoji { font-size: 48px; margin-bottom: 8px; }
+  .voucher-title { font-size: 22px; font-weight: 800; letter-spacing: 1px; margin-bottom: 4px; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+  .voucher-subtitle { font-size: 13px; opacity: 0.9; font-weight: 500; }
+  .voucher-body { padding: 24px; text-align: center; }
+  .voucher-greeting { font-size: 15px; margin-bottom: 14px; font-weight: 600; }
+  .voucher-gift { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 14px; padding: 18px 16px; margin-bottom: 18px; }
+  .voucher-gift-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.85; margin-bottom: 6px; }
+  .voucher-gift-value { font-size: 28px; font-weight: 800; line-height: 1.2; }
+  .voucher-gift-value small { display: block; font-size: 13px; font-weight: 500; opacity: 0.9; margin-top: 4px; }
+  .voucher-message { font-size: 14px; line-height: 1.6; margin-bottom: 20px; padding: 16px; background: rgba(255,255,255,0.1); border-radius: 12px; font-style: italic; }
+  .voucher-message strong { font-style: normal; }
+  .voucher-qr-area { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 16px; display: flex; flex-direction: column; align-items: center; }
+  .voucher-qr-label { font-size: 11px; color: #0077b6; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
+  .voucher-codes { background: rgba(0,0,0,0.25); border-radius: 10px; padding: 12px; margin-bottom: 14px; }
+  .voucher-codes div { font-size: 12px; margin: 4px 0; }
+  .voucher-codes strong { font-size: 15px; font-weight: 700; letter-spacing: 1px; }
+  .voucher-validity { background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.4); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 12px; }
+  .voucher-validity strong { font-size: 14px; color: #ffd700; }
+  .voucher-footer { padding: 14px 24px; background: rgba(0,0,0,0.2); text-align: center; font-size: 11px; line-height: 1.5; opacity: 0.95; }
+  .voucher-footer strong { font-size: 13px; }
+
+  .actions-row { margin-top: 24px; display: grid; gap: 10px; max-width: 400px; margin-left: auto; margin-right: auto; }
+  .whatsapp-box { margin-top: 20px; padding: 18px; background: rgba(37, 211, 102, 0.1); border: 1px solid rgba(37, 211, 102, 0.3); border-radius: 10px; max-width: 400px; margin-left: auto; margin-right: auto; }
+  .whatsapp-box label { color: #25d366; }
+
+  .totem { text-align: center; padding: 20px; max-width: 700px; margin: 0 auto; }
+  .totem-header { margin-bottom: 24px; }
+  .totem-icon { font-size: 64px; margin-bottom: 12px; }
+  .totem-header h3 { font-size: 24px; color: #f1f5f9; margin-bottom: 6px; }
+  .totem-header p { color: #94a3b8; font-size: 14px; }
+  .scanner-container { background: #0f172a; border: 2px solid #334155; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+  .scanner-status { font-size: 13px; color: #94a3b8; margin-bottom: 14px; padding: 10px; background: #1e293b; border-radius: 8px; }
+  .scanner-status.active { color: #10b981; background: rgba(16,185,129,0.1); }
+  .scanner-status.error { color: #ef4444; background: rgba(239,68,68,0.1); }
+  #qr-reader { border-radius: 12px; overflow: hidden; max-width: 500px; margin: 0 auto; }
+  #qr-reader video { border-radius: 12px; }
+  #qr-reader__dashboard_section { padding: 10px !important; }
+  #qr-reader__dashboard_section_csr button { background: #3b82f6 !important; color: #fff !important; border: none !important; padding: 10px 20px !important; border-radius: 8px !important; cursor: pointer !important; font-weight: 600 !important; }
+  #qr-reader__camera_selection { background: #1e293b !important; color: #f1f5f9 !important; border: 1px solid #334155 !important; padding: 8px !important; border-radius: 6px !important; margin-bottom: 10px !important; }
+  #qr-reader__dashboard_section_swaplink { color: #3b82f6 !important; }
+  #qr-reader__filescan_input { color: #cbd5e1 !important; }
+  #qr-reader__header_message { color: #94a3b8 !important; }
+  .scanner-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .scanner-actions .btn { margin-top: 0; }
+  .manual-divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .manual-divider::before, .manual-divider::after { content: ''; flex: 1; height: 1px; background: #334155; }
+  .manual-search { max-width: 500px; margin: 0 auto; }
+  .result { margin-top: 24px; padding: 24px; border-radius: 10px; max-width: 500px; margin-left: auto; margin-right: auto; display: none; }
+  .result.show { display: block; }
+  .result.valid { background: rgba(16, 185, 129, 0.15); border: 2px solid #10b981; }
+  .result.invalid { background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; }
+  .result.used { background: rgba(245, 158, 11, 0.15); border: 2px solid #f59e0b; }
+  .result.expired { background: rgba(168, 85, 247, 0.15); border: 2px solid #a855f7; }
+  .result h4 { font-size: 18px; margin-bottom: 12px; }
+  .result.valid h4 { color: #10b981; }
+  .result.invalid h4 { color: #ef4444; }
+  .result.used h4 { color: #f59e0b; }
+  .result.expired h4 { color: #a855f7; }
+  .result-info { text-align: left; background: rgba(0,0,0,0.2); padding: 16px; border-radius: 8px; margin: 12px 0; }
+  .result-info div { padding: 6px 0; font-size: 13px; }
+
+  .table-container { margin-top: 24px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: #0f172a; border-radius: 8px; overflow: hidden; min-width: 1000px; }
+  th { background: #334155; padding: 12px; text-align: left; font-size: 12px; color: #cbd5e1; text-transform: uppercase; }
+  td { padding: 12px; border-top: 1px solid #1e293b; font-size: 13px; vertical-align: middle; }
+  .badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+  .badge-used { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+  .badge-expired { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+  .badge-warning { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+  .empty { text-align: center; padding: 40px; color: #64748b; }
+  .delete-btn { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s; }
+  .delete-btn:hover { background: rgba(239, 68, 68, 0.3); }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .kpi-card { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #334155; border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--c, #3b82f6); }
+  .kpi-card.green { --c: #10b981; }
+  .kpi-card.amber { --c: #f59e0b; }
+  .kpi-card.purple { --c: #a855f7; }
+  .kpi-card.red { --c: #ef4444; }
+  .kpi-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 600; }
+  .kpi-value { font-size: 32px; font-weight: 800; color: #f1f5f9; line-height: 1; }
+  .kpi-sub { font-size: 12px; color: #94a3b8; margin-top: 6px; }
+  .report-section { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+  .report-section h3 { font-size: 15px; color: #f1f5f9; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #334155; }
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; font-size: 13px; }
+  .bar-label { min-width: 140px; color: #cbd5e1; }
+  .bar-track { flex: 1; height: 22px; background: #1e293b; border-radius: 4px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); border-radius: 4px; display: flex; align-items: center; padding-left: 8px; color: #fff; font-size: 11px; font-weight: 600; transition: width 0.6s; }
+  .bar-fill.green { background: linear-gradient(90deg, #10b981, #059669); }
+  .bar-fill.amber { background: linear-gradient(90deg, #f59e0b, #d97706); }
+  .bar-fill.purple { background: linear-gradient(90deg, #a855f7, #7c3aed); }
+  .bar-fill.red { background: linear-gradient(90deg, #ef4444, #dc2626); }
+  .bar-value { min-width: 60px; text-align: right; color: #f1f5f9; font-weight: 600; }
+  .insights-list { list-style: none; padding: 0; }
+  .insights-list li { padding: 10px 14px; background: #1e293b; border-left: 3px solid #3b82f6; border-radius: 6px; margin-bottom: 8px; font-size: 13px; line-height: 1.5; }
+  .insights-list li.warning { border-left-color: #f59e0b; }
+  .insights-list li.danger { border-left-color: #ef4444; }
+  .insights-list li.success { border-left-color: #10b981; }
+  .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .filter-bar select { padding: 8px 12px; }
+
+  .loading-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; flex-direction: column; gap: 14px; }
+  .loading-overlay .loader { width: 40px; height: 40px; border-width: 4px; }
+  .loading-overlay p { color: #cbd5e1; font-size: 14px; }
+  .loading-overlay.hidden { display: none; }
+
+  @media (max-width: 480px) {
+    .voucher-card { width: 100%; }
+    .form-row { grid-template-columns: 1fr; }
+    .scanner-actions { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader"></div>
+  <p id="loadingText">Conectando ao banco de dados...</p>
+</div>
+
+<div class="header">
+  <h1>Mecânica Brasil — Vouchers Parque das Águas <span class="sync-indicator syncing" id="syncIndicator">Conectando...</span></h1>
+  <p>Emissão automática • Validade de 1 ano • Sincronização em nuvem</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab(0)">Emitir</button>
+  <button class="tab" onclick="switchTab(1)">Totem</button>
+  <button class="tab" onclick="switchTab(2)">Vouchers</button>
+  <button class="tab" onclick="switchTab(3)">Relatório</button>
+</div>
+
+<div class="panel active" id="panel-0">
+  <h2>Emissão de Voucher</h2>
+  <p class="subtitle">Anexe o PDF da OS — número, nome e telefone serão extraídos automaticamente</p>
+  
+  <div class="alert">
+    O sistema lê o PDF e identifica automaticamente: <strong>OS</strong>, <strong>cliente</strong> e <strong>telefone</strong>.<br>
+    Cada voucher tem <strong>validade de 1 ano</strong> a partir da emissão.
+  </div>
+
+  <div class="form-group">
+    <label>Arquivo da Ordem de Serviço (PDF preferencialmente)</label>
+    <input type="file" id="osFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+    <div class="file-info" id="fileInfo"></div>
+    <div class="extracted-data" id="extractedData">
+      <h4>Dados extraídos do documento</h4>
+      <div class="item" id="exOs"><span>OS:</span><span>—</span></div>
+      <div class="item" id="exName"><span>Cliente:</span><span>—</span></div>
+      <div class="item" id="exPhone"><span>Telefone:</span><span>—</span></div>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>Número da OS <span class="hint">(automático)</span></label>
+      <input type="text" id="osNumber" placeholder="Aguardando upload...">
+    </div>
+    <div class="form-group">
+      <label>Nome do Cliente <span class="hint">(automático)</span></label>
+      <input type="text" id="clientName" placeholder="Aguardando upload...">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Telefone (WhatsApp) <span class="hint">(automático — número do cliente)</span></label>
+    <input type="tel" id="clientPhone" placeholder="Ex: 65999998888">
+  </div>
+
+  <button class="btn btn-success" onclick="generateVoucher()">Gerar Voucher</button>
+
+  <div class="voucher-wrapper" id="voucherWrapper">
+    <div class="voucher-card" id="voucherCard">
+      <div class="voucher-top">
+        <div class="voucher-emoji">🌊</div>
+        <div class="voucher-title">PARQUE DAS ÁGUAS</div>
+        <div class="voucher-subtitle">Voucher Cortesia Exclusiva</div>
+      </div>
+      <div class="voucher-body">
+        <div class="voucher-greeting" id="vGreeting">Olá!</div>
+        <div class="voucher-gift">
+          <div class="voucher-gift-label">Você ganhou</div>
+          <div class="voucher-gift-value">2 ACESSOS<small>ao Parque das Águas</small></div>
+        </div>
+        <div class="voucher-message">
+          "Obrigado por confiar nos serviços da <strong>Mecânica Brasil</strong>!<br>
+          Como forma de agradecimento, presenteamos você com este voucher.<br>
+          <strong>Aproveite!</strong>"
+        </div>
+        <div class="voucher-qr-area">
+          <div id="qrcode"></div>
+          <div class="voucher-qr-label">Apresente no totem do parque</div>
+        </div>
+        <div class="voucher-validity">Válido até: <strong id="vExpiry">—</strong></div>
+        <div class="voucher-codes">
+          <div>OS: <strong id="vOs">—</strong></div>
+          <div>Emitido em: <strong id="vDate">—</strong></div>
+        </div>
+      </div>
+      <div class="voucher-footer">
+        <strong>Como usar:</strong> apresente este voucher no totem do parque<br>
+        para validação via QR Code.<br>
+        <em>Voucher pessoal e intransferível • Não cumulativo</em>
+      </div>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn btn-secondary" onclick="downloadVoucher()">Baixar Voucher como Imagem</button>
+    </div>
+
+    <div class="whatsapp-box">
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label>Número do WhatsApp do Cliente</label>
+        <input type="tel" id="whatsNumber" placeholder="Ex: 65999998888">
+      </div>
+      <button class="btn btn-whatsapp" onclick="sendWhatsApp()">Enviar por WhatsApp</button>
+      <p style="font-size: 11px; color: #94a3b8; margin-top: 10px; text-align: center;">
+        Anexe a imagem baixada do voucher ao enviar.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="panel-1">
+  <h2>Totem de Validação — Parque das Águas</h2>
+  <p class="subtitle">Aponte o QR Code do voucher para a câmera</p>
+  
+  <div class="totem">
+    <div class="totem-header">
+      <div class="totem-icon">📷</div>
+      <h3>Validação por QR Code</h3>
+      <p>O sistema acessa a câmera e lê o QR Code automaticamente</p>
+    </div>
+
+    <div class="scanner-container">
+      <div class="scanner-status" id="scannerStatus">Câmera desligada — clique em "Ligar Câmera" para iniciar</div>
+      <div id="qr-reader" style="width: 100%;"></div>
+      
+      <div class="scanner-actions">
+        <button class="btn btn-camera" id="startScannerBtn" onclick="startScanner()">Ligar Câmera</button>
+        <button class="btn btn-secondary" id="stopScannerBtn" onclick="stopScanner()" disabled>Desligar Câmera</button>
+      </div>
+    </div>
+
+    <div class="manual-divider">ou validação manual</div>
+
+    <div class="manual-search">
+      <div class="form-group">
+        <input type="text" id="searchCode" placeholder="Digite o número da OS" style="text-align: center; font-size: 18px; padding: 16px;">
+      </div>
+      <button class="btn" onclick="validateVoucher(document.getElementById('searchCode').value)">Buscar e Validar</button>
+    </div>
+
+    <div class="result" id="validationResult"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel-2">
+  <h2>Vouchers Emitidos</h2>
+  <p class="subtitle">Histórico completo • Status atualizado automaticamente</p>
+  <div class="filter-bar">
+    <select id="statusFilter" onchange="renderTable()">
+      <option value="">Todos os status</option>
+      <option value="ATIVO">Ativos</option>
+      <option value="UTILIZADO">Utilizados</option>
+      <option value="EXPIRADO">Expirados</option>
+    </select>
+    <input type="text" id="searchFilter" placeholder="Buscar por OS, cliente ou voucher..." onkeyup="renderTable()" style="flex:1; min-width:200px;">
+    <button class="btn btn-secondary" style="width: auto; margin-top: 0; padding: 8px 16px;" onclick="loadFromFirestore(true)">Atualizar</button>
+  </div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr><th>OS</th><th>Cliente</th><th>Telefone</th><th>Emissão</th><th>Validade</th><th>Status</th><th>Uso</th><th>Ações</th></tr>
+      </thead>
+      <tbody id="vouchersBody"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel" id="panel-3">
+  <h2>Relatório de Uso de Vouchers</h2>
+  <p class="subtitle">Análise consolidada de emissão, resgate e desempenho</p>
+  <div id="reportContent"></div>
+</div>
+
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <h3>Excluir Voucher</h3>
+    <p>Esta ação é <strong>irreversível</strong>. O voucher será removido da base ativa, mas o registro de exclusão será mantido permanentemente para auditoria.</p>
+    <div class="voucher-summary" id="deleteVoucherSummary"></div>
+    <div class="form-group">
+      <label>Justificativa da exclusão <span class="hint">(mínimo 30 caracteres)</span></label>
+      <textarea id="deleteReason" placeholder="Descreva o motivo da exclusão. Ex: voucher emitido em duplicidade para a OS X, número incorreto solicitado pelo cliente, etc."></textarea>
+      <div class="char-counter" id="charCounter">0 / 30 caracteres</div>
+    </div>
+    <div class="form-group">
+      <label>Responsável pela exclusão</label>
+      <input type="text" id="deletedBy" placeholder="Seu nome">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancelar</button>
+      <button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()" disabled>Confirmar Exclusão</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const VALIDITY_MS = 365 * 24 * 60 * 60 * 1000;
+  const COMPANY_PHONES = ['6596167870', '65996167870'];
+
+  let vouchers = [];
+  let deletionLog = [];
+  let currentFile = null;
+  let currentVoucherId = null;
+  let voucherToDelete = null;
+  let html5QrCode = null;
+  let scannerActive = false;
+  let lastScannedCode = null;
+  let lastScanTime = 0;
+  let firebaseInitialized = false;
+
+  // ===== INICIALIZAÇÃO COM FIREBASE =====
+  function setSyncStatus(status, text) {
+    const ind = document.getElementById('syncIndicator');
+    ind.className = 'sync-indicator ' + status;
+    ind.textContent = text;
+  }
+
+  async function loadFromFirestore(showFeedback = false) {
+    if (!window.firebaseReady) return;
+    try {
+      setSyncStatus('syncing', 'Sincronizando...');
+      const { collection, getDocs } = window.firestoreFns;
+      const db = window.firebaseDB;
+
+      const vSnap = await getDocs(collection(db, 'vouchers'));
+      vouchers = [];
+      vSnap.forEach(d => vouchers.push({ ...d.data(), _docId: d.id }));
+
+      const dSnap = await getDocs(collection(db, 'deletionLog'));
+      deletionLog = [];
+      dSnap.forEach(d => deletionLog.push({ ...d.data(), _docId: d.id }));
+
+      setSyncStatus('online', 'Online ✓');
+      
+      // Re-renderiza painéis ativos
+      const activePanel = document.querySelector('.panel.active');
+      if (activePanel) {
+        const idx = activePanel.id.replace('panel-', '');
+        if (idx === '2') renderTable();
+        if (idx === '3') renderReport();
+      }
+      
+      if (showFeedback) {
+        const ind = document.getElementById('syncIndicator');
+        ind.textContent = 'Atualizado ✓';
+        setTimeout(() => setSyncStatus('online', 'Online ✓'), 1500);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar do Firestore:', err);
+      setSyncStatus('offline', 'Erro de conexão');
+    }
+  }
+
+  window.addEventListener('firebase-ready', async () => {
+    firebaseInitialized = true;
+    document.getElementById('loadingText').textContent = 'Carregando vouchers...';
+    await loadFromFirestore();
+    document.getElementById('loadingOverlay').classList.add('hidden');
+  });
+
+  // Timeout de segurança: se Firebase não carregar em 10s, libera a UI mesmo assim
+  setTimeout(() => {
+    if (!firebaseInitialized) {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+      setSyncStatus('offline', 'Sem conexão');
+      alert('Não foi possível conectar ao banco de dados. Verifique sua conexão com a internet.');
+    }
+  }, 10000);
+
+  // ===== UTILITÁRIOS =====
+  function switchTab(index) {
+    if (scannerActive && index !== 1) stopScanner();
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === index));
+    document.querySelectorAll('.panel').forEach((p, i) => p.classList.toggle('active', i === index));
+    if (index === 2) renderTable();
+    if (index === 3) renderReport();
+  }
+
+  function getStatus(v) {
+    if (v.status === 'UTILIZADO') return 'UTILIZADO';
+    if (v.expiryDate && new Date(v.expiryDate) < new Date()) return 'EXPIRADO';
+    return 'ATIVO';
+  }
+  function daysUntilExpiry(v) {
+    if (!v.expiryDate) return null;
+    return Math.ceil((new Date(v.expiryDate) - new Date()) / (24*60*60*1000));
+  }
+  function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('pt-BR') : '—'; }
+
+  function extractOSNumber(text) {
+    const patterns = [/OS\s*N[ºo°\.]?\s*[:\-]?\s*(\d{1,8})/i, /Ordem\s+de\s+Servi[çc]o\s*N?[ºo°\.]?\s*[:\-]?\s*(\d{1,8})/i];
+    for (const p of patterns) { const m = text.match(p); if (m && m[1]) return m[1].trim(); }
+    return null;
+  }
+  function extractClientName(text) {
+    let m = text.match(/([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ\s]{4,80}?)\s*(?:\[[^\]]*\])?\s*\/\/\s*\d{3}\.\d{3}\.\d{3}-\d{2}/);
+    if (m && m[1]) return cleanName(m[1]);
+    m = text.match(/Cliente\s*[:\-]?\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ\s]{4,80})/i);
+    if (m && m[1]) return cleanName(m[1]);
+    return null;
+  }
+  function cleanName(name) {
+    return name.replace(/\[\]/g, '').replace(/\s+/g, ' ').trim()
+      .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  }
+
+  function isCompanyPhone(phone) {
+    const digits = phone.replace(/\D/g, '');
+    return COMPANY_PHONES.some(cp => digits === cp || digits.endsWith(cp.slice(-10)) || cp.endsWith(digits.slice(-10)));
+  }
+  function isValidCellphone(digits) {
+    if (digits.length !== 11) return false;
+    const ddd = parseInt(digits.slice(0, 2));
+    if (ddd < 11 || ddd > 99) return false;
+    if (digits[2] !== '9') return false;
+    return true;
+  }
+
+  function extractPhone(text) {
+    const cpfAnchorRegex = /\d{3}\.\d{3}\.\d{3}-\d{2}[\s\S]{0,80}?\((\d{2})\)\s*9?\s*(\d{4,5})[\s\-]?(\d{4})/;
+    const am = text.match(cpfAnchorRegex);
+    if (am) {
+      const candidate = (am[1] + am[2] + am[3]).replace(/\D/g, '');
+      let normalized = candidate;
+      if (candidate.length === 10) normalized = candidate.slice(0, 2) + '9' + candidate.slice(2);
+      if (!isCompanyPhone(normalized) && isValidCellphone(normalized)) return normalized;
+    }
+    const regex = /\((\d{2})\)\s*(9?)\s*(\d{4,5})[\s\-]?(\d{4})/g;
+    const candidates = [];
+    let m;
+    while ((m = regex.exec(text)) !== null) {
+      const ddd = m[1], has9 = m[2] === '9', mid = m[3], last = m[4];
+      let full;
+      if (has9) full = ddd + '9' + mid + last;
+      else if (mid.length === 5 && mid[0] === '9') full = ddd + mid + last;
+      else if (mid.length === 4) full = ddd + '9' + mid + last;
+      else full = ddd + mid + last;
+      full = full.replace(/\D/g, '');
+      if (!isCompanyPhone(full) && isValidCellphone(full)) candidates.push({ phone: full, position: m.index });
+    }
+    if (candidates.length === 0) return null;
+    const cpfMatch = text.match(/\d{3}\.\d{3}\.\d{3}-\d{2}/);
+    if (cpfMatch && candidates.length > 1) {
+      const cpfPos = cpfMatch.index;
+      candidates.sort((a, b) => Math.abs(a.position - cpfPos) - Math.abs(b.position - cpfPos));
+    }
+    return candidates[0].phone;
+  }
+
+  function formatPhoneDisplay(phone) {
+    if (!phone) return '—';
+    const c = phone.replace(/\D/g, '');
+    if (c.length === 11) return `(${c.slice(0,2)}) ${c.slice(2,7)}-${c.slice(7)}`;
+    if (c.length === 10) return `(${c.slice(0,2)}) ${c.slice(2,6)}-${c.slice(6)}`;
+    return phone;
+  }
+  function getFirstName(n) { return n ? n.trim().split(' ')[0] : ''; }
+
+  async function extractTextFromPDF(buffer) {
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const c = await page.getTextContent();
+      text += c.items.map(it => it.str).join(' ') + '\n';
+    }
+    return text;
+  }
+
+  function updateExtractedDisplay(os, name, phone) {
+    const ex = document.getElementById('extractedData');
+    ex.classList.add('show');
+    document.getElementById('exOs').innerHTML = `<span>OS:</span><span>${os || 'não localizada'}</span>`;
+    document.getElementById('exOs').className = 'item' + (os ? '' : ' missing');
+    document.getElementById('exName').innerHTML = `<span>Cliente:</span><span>${name || 'não localizado'}</span>`;
+    document.getElementById('exName').className = 'item' + (name ? '' : ' missing');
+    document.getElementById('exPhone').innerHTML = `<span>Telefone do cliente:</span><span>${phone ? formatPhoneDisplay(phone) : 'não localizado'}</span>`;
+    document.getElementById('exPhone').className = 'item' + (phone ? '' : ' missing');
+  }
+
+  document.getElementById('osFile').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { alert('Arquivo muito grande (10MB).'); this.value=''; return; }
+    const fi = document.getElementById('fileInfo');
+    fi.className = 'file-info';
+    fi.innerHTML = '<span class="loader"></span> Lendo arquivo...';
+    
+    // Marca que tem arquivo (mas NÃO armazena no banco)
+    currentFile = { name: file.name, type: file.type };
+
+    if (file.type === 'application/pdf') {
+      try {
+        const buffer = await file.arrayBuffer();
+        const text = await extractTextFromPDF(buffer);
+        const os = extractOSNumber(text);
+        const name = extractClientName(text);
+        const phone = extractPhone(text);
+        if (os) { document.getElementById('osNumber').value = os; document.getElementById('osNumber').classList.add('auto-filled'); }
+        if (name) { document.getElementById('clientName').value = name; document.getElementById('clientName').classList.add('auto-filled'); }
+        if (phone) { document.getElementById('clientPhone').value = phone; document.getElementById('clientPhone').classList.add('auto-filled'); }
+        updateExtractedDisplay(os, name, phone);
+        const count = [os, name, phone].filter(Boolean).length;
+        fi.innerHTML = `<strong>${file.name}</strong> — ${count}/3 dados extraídos (PDF descartado após leitura)`;
+        if (count < 3) fi.className = 'file-info error';
+      } catch (err) {
+        fi.className = 'file-info error';
+        fi.innerHTML = 'Falha ao ler PDF. Preencha manualmente.';
+      }
+    } else {
+      fi.innerHTML = `<strong>${file.name}</strong> — extração automática só para PDF`;
+    }
+  });
+
+  // ===== GERAR VOUCHER (SALVA NO FIRESTORE) =====
+  async function generateVoucher() {
+    if (!window.firebaseReady) { alert('Aguarde a conexão com o banco de dados.'); return; }
+    
+    const osNumber = document.getElementById('osNumber').value.trim();
+    const clientName = document.getElementById('clientName').value.trim();
+    const clientPhoneRaw = document.getElementById('clientPhone').value.replace(/\D/g, '');
+
+    if (!osNumber) { alert('Número da OS não informado.'); return; }
+    if (!currentFile) { alert('Anexe o arquivo da OS.'); return; }
+    if (clientPhoneRaw && isCompanyPhone(clientPhoneRaw)) {
+      alert('O número informado é o da Mecânica Brasil, não do cliente. Corrija antes de gerar o voucher.');
+      document.getElementById('clientPhone').focus();
+      return;
+    }
+    if (vouchers.some(v => v.osNumber.toUpperCase() === osNumber.toUpperCase())) {
+      alert('Já existe voucher para esta OS.'); return;
+    }
+
+    const now = new Date();
+    const expiry = new Date(now.getTime() + VALIDITY_MS);
+    const voucherId = 'VC-' + Date.now().toString(36).toUpperCase();
+    const voucher = {
+      voucherId, osNumber, clientName, clientPhone: clientPhoneRaw,
+      issueDate: now.toLocaleDateString('pt-BR'),
+      issueTimestamp: now.getTime(),
+      expiryDate: expiry.toISOString(),
+      status: 'ATIVO', usedAt: null, usedTimestamp: null
+    };
+
+    try {
+      setSyncStatus('syncing', 'Salvando...');
+      const { collection, doc, setDoc } = window.firestoreFns;
+      const db = window.firebaseDB;
+      await setDoc(doc(db, 'vouchers', voucherId), voucher);
+      voucher._docId = voucherId;
+      vouchers.push(voucher);
+      currentVoucherId = voucherId;
+      setSyncStatus('online', 'Online ✓');
+    } catch (err) {
+      console.error('Erro ao salvar:', err);
+      setSyncStatus('offline', 'Erro ao salvar');
+      alert('Erro ao salvar o voucher no banco. Verifique sua conexão e tente novamente.');
+      return;
+    }
+
+    const firstName = getFirstName(clientName);
+    document.getElementById('vGreeting').textContent = firstName ? `Olá, ${firstName}!` : 'Olá!';
+    document.getElementById('vOs').textContent = osNumber;
+    document.getElementById('vDate').textContent = voucher.issueDate;
+    document.getElementById('vExpiry').textContent = expiry.toLocaleDateString('pt-BR');
+
+    document.getElementById('qrcode').innerHTML = '';
+    new QRCode(document.getElementById('qrcode'), {
+      text: JSON.stringify({ voucherId, osNumber }), 
+      width: 130, height: 130,
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    document.getElementById('whatsNumber').value = clientPhoneRaw;
+    document.getElementById('voucherWrapper').classList.add('show');
+    document.getElementById('voucherWrapper').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function downloadVoucher() {
+    html2canvas(document.getElementById('voucherCard'), { scale: 2, backgroundColor: null }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = 'voucher-' + currentVoucherId + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  }
+
+  function sendWhatsApp() {
+    const number = document.getElementById('whatsNumber').value.replace(/\D/g, '');
+    if (!number || number.length < 10) { alert('Número inválido.'); return; }
+    if (isCompanyPhone(number)) {
+      alert('Esse é o número da Mecânica Brasil, não do cliente. Corrija o número antes de enviar.');
+      document.getElementById('whatsNumber').focus();
+      return;
+    }
+    const v = vouchers.find(x => x.voucherId === currentVoucherId);
+    if (!v) return;
+
+    const firstName = getFirstName(v.clientName);
+    const greeting = firstName ? `Olá, *${firstName}*!` : 'Olá!';
+    const expiry = new Date(v.expiryDate).toLocaleDateString('pt-BR');
+
+    const msg =
+`*PARQUE DAS ÁGUAS — VOUCHER CORTESIA*
+
+${greeting} Muito obrigado por confiar nos serviços da *Mecânica Brasil*!
+
+Como forma de agradecimento, você ganhou:
+*2 ACESSOS ao Parque das Águas*
+
+*Dados do seu voucher:*
+- OS: *${v.osNumber}*
+- Emitido em: ${v.issueDate}
+- Válido até: *${expiry}*
+
+*Como usar:*
+Apresente o voucher (imagem em anexo) no totem do parque. A validação é feita por leitura do QR Code pela câmera.
+
+_Voucher pessoal e intransferível. Validade de 1 ano._
+
+Aproveite muito!`;
+
+    const fullNumber = number.startsWith('55') ? number : '55' + number;
+    window.open(`https://wa.me/${fullNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+
+  // ===== TOTEM — SCANNER =====
+  function setScannerStatus(text, type) {
+    const el = document.getElementById('scannerStatus');
+    el.textContent = text;
+    el.className = 'scanner-status' + (type ? ' ' + type : '');
+  }
+
+  async function startScanner() {
+    if (scannerActive) return;
+    setScannerStatus('Iniciando câmera...', '');
+    try {
+      html5QrCode = new Html5Qrcode("qr-reader");
+      const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.333, showTorchButtonIfSupported: true, showZoomSliderIfSupported: true };
+      await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure);
+      scannerActive = true;
+      setScannerStatus('Câmera ativa — aponte o QR Code do voucher', 'active');
+      document.getElementById('startScannerBtn').disabled = true;
+      document.getElementById('stopScannerBtn').disabled = false;
+    } catch (err) {
+      console.error('Erro câmera traseira:', err);
+      try {
+        await html5QrCode.start({ facingMode: "user" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, onScanFailure);
+        scannerActive = true;
+        setScannerStatus('Câmera ativa (frontal) — aponte o QR Code', 'active');
+        document.getElementById('startScannerBtn').disabled = true;
+        document.getElementById('stopScannerBtn').disabled = false;
+      } catch (err2) {
+        setScannerStatus('Erro ao acessar câmera. Permita o uso da câmera no navegador ou use a busca manual abaixo.', 'error');
+      }
+    }
+  }
+
+  async function stopScanner() {
+    if (!scannerActive || !html5QrCode) return;
+    try {
+      await html5QrCode.stop();
+      html5QrCode.clear();
+      scannerActive = false;
+      setScannerStatus('Câmera desligada', '');
+      document.getElementById('startScannerBtn').disabled = false;
+      document.getElementById('stopScannerBtn').disabled = true;
+    } catch (err) { console.error(err); }
+  }
+
+  function onScanSuccess(decodedText) {
+    const now = Date.now();
+    if (decodedText === lastScannedCode && (now - lastScanTime) < 3000) return;
+    lastScannedCode = decodedText;
+    lastScanTime = now;
+    setScannerStatus('QR Code lido com sucesso! Validando...', 'active');
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.2);
+    } catch(e) {}
+    validateVoucher(decodedText);
+  }
+
+  function onScanFailure(error) { /* silencioso */ }
+
+  // ===== VALIDAÇÃO (RECARREGA DO FIRESTORE PARA GARANTIR FRESCOR) =====
+  async function validateVoucher(input) {
+    const raw = (input || '').trim();
+    const box = document.getElementById('validationResult');
+    if (!raw) { alert('Código vazio.'); return; }
+    
+    // Recarrega antes de validar para garantir status atualizado entre dispositivos
+    await loadFromFirestore();
+    
+    let key = raw.toUpperCase();
+    try {
+      const p = JSON.parse(raw);
+      key = (p.voucherId || p.osNumber || '').toUpperCase();
+    } catch(e) {}
+
+    const v = vouchers.find(x => 
+      (x.voucherId || '').toUpperCase() === key || 
+      (x.osNumber || '').toUpperCase() === key
+    );
+    
+    box.classList.add('show');
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    if (!v) {
+      box.className = 'result show invalid';
+      box.innerHTML = `<h4>Voucher Não Encontrado</h4><p>Código não corresponde a nenhum voucher emitido.</p>
+        <button class="btn btn-secondary" onclick="clearResult()" style="margin-top:14px;">Nova Validação</button>`;
+      setScannerStatus('Voucher não encontrado — tente outro QR Code', 'error');
+      return;
+    }
+    
+    const status = getStatus(v);
+    
+    if (status === 'EXPIRADO') {
+      box.className = 'result show expired';
+      box.innerHTML = `<h4>Voucher Expirado</h4>
+        <div class="result-info">
+          <div><strong>Cliente:</strong> ${v.clientName || '—'}</div>
+          <div><strong>OS:</strong> ${v.osNumber}</div>
+          <div><strong>Expirou em:</strong> ${formatDate(v.expiryDate)}</div>
+        </div>
+        <button class="btn btn-secondary" onclick="clearResult()" style="margin-top:14px;">Nova Validação</button>`;
+      setScannerStatus('Voucher expirado', 'error');
+      return;
+    }
+    
+    if (status === 'UTILIZADO') {
+      box.className = 'result show used';
+      box.innerHTML = `<h4>Voucher Já Utilizado</h4>
+        <div class="result-info">
+          <div><strong>Cliente:</strong> ${v.clientName || '—'}</div>
+          <div><strong>OS:</strong> ${v.osNumber}</div>
+          <div><strong>Utilizado em:</strong> ${v.usedAt}</div>
+        </div>
+        <button class="btn btn-secondary" onclick="clearResult()" style="margin-top:14px;">Nova Validação</button>`;
+      setScannerStatus('Voucher já utilizado', 'error');
+      return;
+    }
+    
+    const days = daysUntilExpiry(v);
+    box.className = 'result show valid';
+    box.innerHTML = `<h4>Voucher Válido — Acesso Liberado</h4>
+      <div class="result-info">
+        <div><strong>Cliente:</strong> ${v.clientName || '—'}</div>
+        <div><strong>OS:</strong> ${v.osNumber}</div>
+        <div><strong>Válido até:</strong> ${formatDate(v.expiryDate)} <em>(${days} dias)</em></div>
+        <div><strong>Direito a:</strong> 2 acessos</div>
+      </div>
+      <button class="btn btn-success" onclick="confirmUse('${v.voucherId}')">Confirmar Entrada</button>
+      <button class="btn btn-secondary" onclick="clearResult()" style="margin-top:8px;">Cancelar</button>`;
+    setScannerStatus('Voucher válido — confirme a entrada', 'active');
+  }
+
+  function clearResult() {
+    document.getElementById('validationResult').classList.remove('show');
+    document.getElementById('searchCode').value = '';
+    lastScannedCode = null;
+    if (scannerActive) setScannerStatus('Câmera ativa — aponte o QR Code do voucher', 'active');
+  }
+
+  // ===== CONFIRMAR USO (ATUALIZA NO FIRESTORE) =====
+  async function confirmUse(voucherId) {
+    const v = vouchers.find(x => x.voucherId === voucherId);
+    if (!v) return;
+    
+    const usedAt = new Date().toLocaleString('pt-BR');
+    const usedTimestamp = Date.now();
+
+    try {
+      setSyncStatus('syncing', 'Confirmando...');
+      const { doc, updateDoc } = window.firestoreFns;
+      const db = window.firebaseDB;
+      await updateDoc(doc(db, 'vouchers', v._docId || v.voucherId), {
+        status: 'UTILIZADO',
+        usedAt: usedAt,
+        usedTimestamp: usedTimestamp
+      });
+      v.status = 'UTILIZADO';
+      v.usedAt = usedAt;
+      v.usedTimestamp = usedTimestamp;
+      setSyncStatus('online', 'Online ✓');
+    } catch (err) {
+      console.error('Erro ao confirmar uso:', err);
+      setSyncStatus('offline', 'Erro ao salvar');
+      alert('Erro ao registrar o uso. Tente novamente.');
+      return;
+    }
+
+    document.getElementById('validationResult').innerHTML = `<h4>Entrada Confirmada</h4>
+      <p>${v.clientName ? v.clientName + ' — ' : ''}OS <strong>${v.osNumber}</strong> liberada às ${v.usedAt}</p>
+      <button class="btn btn-secondary" onclick="clearResult()" style="margin-top:14px;">Validar Próximo</button>`;
+    setScannerStatus('Entrada confirmada — pronto para próxima validação', 'active');
+  }
+
+  // ===== EXCLUSÃO COM AUDITORIA (FIRESTORE) =====
+  function openDeleteModal(voucherId) {
+    const v = vouchers.find(x => x.voucherId === voucherId);
+    if (!v) return;
+    voucherToDelete = v;
+    document.getElementById('deleteVoucherSummary').innerHTML = `
+      <div><strong>OS:</strong> ${v.osNumber}</div>
+      <div><strong>Cliente:</strong> ${v.clientName || '—'}</div>
+      <div><strong>Telefone:</strong> ${formatPhoneDisplay(v.clientPhone)}</div>
+      <div><strong>Status:</strong> ${getStatus(v)}</div>
+      <div><strong>Emitido em:</strong> ${v.issueDate}</div>
+    `;
+    document.getElementById('deleteReason').value = '';
+    document.getElementById('deletedBy').value = '';
+    document.getElementById('charCounter').textContent = '0 / 30 caracteres';
+    document.getElementById('charCounter').className = 'char-counter';
+    document.getElementById('confirmDeleteBtn').disabled = true;
+    document.getElementById('deleteModal').classList.add('show');
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+    voucherToDelete = null;
+  }
+
+  document.getElementById('deleteReason').addEventListener('input', function() {
+    const len = this.value.trim().length;
+    const counter = document.getElementById('charCounter');
+    counter.textContent = `${len} / 30 caracteres`;
+    if (len >= 30) {
+      counter.className = 'char-counter ok';
+      document.getElementById('confirmDeleteBtn').disabled = false;
+    } else {
+      counter.className = 'char-counter error';
+      document.getElementById('confirmDeleteBtn').disabled = true;
+    }
+  });
+
+  async function confirmDelete() {
+    if (!voucherToDelete) return;
+    const reason = document.getElementById('deleteReason').value.trim();
+    const deletedBy = document.getElementById('deletedBy').value.trim() || 'Não informado';
+    if (reason.length < 30) { alert('A justificativa deve ter no mínimo 30 caracteres.'); return; }
+
+    const logEntry = {
+      voucherId: voucherToDelete.voucherId,
+      osNumber: voucherToDelete.osNumber,
+      clientName: voucherToDelete.clientName || '',
+      clientPhone: voucherToDelete.clientPhone || '',
+      issueDate: voucherToDelete.issueDate,
+      previousStatus: getStatus(voucherToDelete),
+      deletedAt: new Date().toLocaleString('pt-BR'),
+      deletedTimestamp: Date.now(),
+      deletedBy: deletedBy,
+      reason: reason
+    };
+
+    try {
+      setSyncStatus('syncing', 'Excluindo...');
+      const { collection, doc, deleteDoc, addDoc } = window.firestoreFns;
+      const db = window.firebaseDB;
+      
+      // 1. Salva log
+      await addDoc(collection(db, 'deletionLog'), logEntry);
+      // 2. Deleta voucher
+      await deleteDoc(doc(db, 'vouchers', voucherToDelete._docId || voucherToDelete.voucherId));
+      
+      deletionLog.push(logEntry);
+      vouchers = vouchers.filter(v => v.voucherId !== voucherToDelete.voucherId);
+      setSyncStatus('online', 'Online ✓');
+    } catch (err) {
+      console.error('Erro ao excluir:', err);
+      setSyncStatus('offline', 'Erro ao excluir');
+      alert('Erro ao excluir o voucher. Tente novamente.');
+      return;
+    }
+
+    closeDeleteModal();
+    renderTable();
+    alert(`Voucher da OS ${logEntry.osNumber} excluído. Registro de auditoria salvo.`);
+  }
+
+  // ===== TABELA =====
+  function renderTable() {
+    const body = document.getElementById('vouchersBody');
+    const filterStatus = document.getElementById('statusFilter').value;
+    const search = document.getElementById('searchFilter').value.toLowerCase();
+    let list = vouchers.map(v => ({...v, _status: getStatus(v)}));
+    list.sort((a, b) => (b.issueTimestamp || 0) - (a.issueTimestamp || 0));
+    if (filterStatus) list = list.filter(v => v._status === filterStatus);
+    if (search) list = list.filter(v => 
+      (v.osNumber || '').toLowerCase().includes(search) ||
+      (v.clientName || '').toLowerCase().includes(search) ||
+      (v.voucherId || '').toLowerCase().includes(search));
+    if (list.length === 0) { body.innerHTML = '<tr><td colspan="8" class="empty">Nenhum voucher encontrado</td></tr>'; return; }
+    body.innerHTML = list.map(v => {
+      const days = daysUntilExpiry(v);
+      const badgeClass = v._status === 'ATIVO' ? 'badge-active' : v._status === 'UTILIZADO' ? 'badge-used' : 'badge-expired';
+      const expiryWarn = (v._status === 'ATIVO' && days !== null && days <= 30) ? `<br><span class="badge badge-warning">${days}d</span>` : '';
+      return `<tr>
+        <td><strong>${v.osNumber}</strong></td>
+        <td>${v.clientName || '—'}</td>
+        <td>${formatPhoneDisplay(v.clientPhone)}</td>
+        <td>${v.issueDate}</td>
+        <td>${formatDate(v.expiryDate)}${expiryWarn}</td>
+        <td><span class="badge ${badgeClass}">${v._status}</span></td>
+        <td>${v.usedAt || '—'}</td>
+        <td><button class="delete-btn" onclick="openDeleteModal('${v.voucherId}')">Excluir</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ===== RELATÓRIO =====
+  function renderReport() {
+    const container = document.getElementById('reportContent');
+    const list = vouchers.map(v => ({...v, _status: getStatus(v)}));
+    if (list.length === 0 && deletionLog.length === 0) {
+      container.innerHTML = '<div class="empty" style="padding:60px; background:#0f172a; border-radius:12px;">Ainda não há vouchers emitidos para gerar relatório</div>';
+      return;
+    }
+    const total = list.length;
+    const totalComExclusoes = total + deletionLog.length;
+    const ativos = list.filter(v => v._status === 'ATIVO').length;
+    const utilizados = list.filter(v => v._status === 'UTILIZADO').length;
+    const expirados = list.filter(v => v._status === 'EXPIRADO').length;
+    const excluidos = deletionLog.length;
+    const taxaResgate = total > 0 ? ((utilizados / total) * 100).toFixed(1) : 0;
+    const taxaExpiracao = total > 0 ? ((expirados / total) * 100).toFixed(1) : 0;
+    const taxaExclusao = totalComExclusoes > 0 ? ((excluidos / totalComExclusoes) * 100).toFixed(1) : 0;
+    const usados = list.filter(v => v._status === 'UTILIZADO' && v.usedTimestamp && v.issueTimestamp);
+    const tempoMedio = usados.length > 0 ? (usados.reduce((s,v) => s + (v.usedTimestamp - v.issueTimestamp), 0) / usados.length / (24*60*60*1000)).toFixed(1) : null;
+    const expirandoBreve = list.filter(v => { if (v._status !== 'ATIVO') return false; const d = daysUntilExpiry(v); return d !== null && d <= 30 && d > 0; });
+
+    const monthlyEmission = {}, monthlyUse = {}, monthlyDeletion = {};
+    list.forEach(v => {
+      if (v.issueTimestamp) { const d = new Date(v.issueTimestamp); const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; monthlyEmission[k] = (monthlyEmission[k]||0)+1; }
+      if (v.usedTimestamp) { const d = new Date(v.usedTimestamp); const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; monthlyUse[k] = (monthlyUse[k]||0)+1; }
+    });
+    deletionLog.forEach(l => {
+      if (l.deletedTimestamp) { const d = new Date(l.deletedTimestamp); const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; monthlyDeletion[k] = (monthlyDeletion[k]||0)+1; }
+    });
+    const allMonths = [...new Set([...Object.keys(monthlyEmission), ...Object.keys(monthlyUse), ...Object.keys(monthlyDeletion)])].sort().slice(-12);
+    const maxMonthly = Math.max(1, ...allMonths.map(k => Math.max(monthlyEmission[k]||0, monthlyUse[k]||0, monthlyDeletion[k]||0)));
+
+    const insights = [];
+    if (taxaResgate >= 50) insights.push({ type: 'success', text: `Excelente engajamento: ${taxaResgate}% dos vouchers foram resgatados.` });
+    else if (taxaResgate >= 25) insights.push({ type: 'warning', text: `Taxa de resgate moderada (${taxaResgate}%). Reforce a comunicação após emissão.` });
+    else if (utilizados > 0) insights.push({ type: 'danger', text: `Taxa de resgate baixa (${taxaResgate}%).` });
+    if (expirandoBreve.length > 0) insights.push({ type: 'warning', text: `${expirandoBreve.length} voucher(s) expira(m) em até 30 dias.` });
+    if (expirados > 0 && taxaExpiracao > 30) insights.push({ type: 'danger', text: `${taxaExpiracao}% dos vouchers expiraram sem uso.` });
+    if (tempoMedio !== null) insights.push({ type: 'success', text: `Tempo médio entre emissão e resgate: ${tempoMedio} dias.` });
+    if (ativos > 0) insights.push({ type: 'success', text: `${ativos} voucher(s) ativo(s) no momento.` });
+    if (excluidos > 0 && parseFloat(taxaExclusao) > 5) insights.push({ type: 'danger', text: `Taxa de exclusão alta (${taxaExclusao}%). Avalie causas frequentes nos motivos registrados.` });
+    else if (excluidos > 0) insights.push({ type: 'warning', text: `${excluidos} voucher(s) já excluído(s) com justificativa registrada.` });
+
+    container.innerHTML = `
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Total Ativo na Base</div><div class="kpi-value">${total}</div><div class="kpi-sub">+ ${excluidos} excluídos</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Ativos</div><div class="kpi-value">${ativos}</div><div class="kpi-sub">${total>0?((ativos/total)*100).toFixed(1):0}% do total</div></div>
+        <div class="kpi-card amber"><div class="kpi-label">Utilizados</div><div class="kpi-value">${utilizados}</div><div class="kpi-sub">Taxa de resgate: ${taxaResgate}%</div></div>
+        <div class="kpi-card purple"><div class="kpi-label">Expirados</div><div class="kpi-value">${expirados}</div><div class="kpi-sub">${taxaExpiracao}% do total</div></div>
+        <div class="kpi-card red"><div class="kpi-label">Excluídos</div><div class="kpi-value">${excluidos}</div><div class="kpi-sub">${taxaExclusao}% das emissões</div></div>
+        <div class="kpi-card ${expirandoBreve.length>0?'red':''}"><div class="kpi-label">Expiram em 30d</div><div class="kpi-value">${expirandoBreve.length}</div><div class="kpi-sub">requerem lembrete</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Tempo Médio Resgate</div><div class="kpi-value">${tempoMedio!==null?tempoMedio:'—'}</div><div class="kpi-sub">${tempoMedio!==null?'dias após emissão':'sem dados ainda'}</div></div>
+      </div>
+
+      <div class="report-section">
+        <h3>Distribuição de Status (base ativa)</h3>
+        <div class="bar-row"><div class="bar-label">Ativos</div><div class="bar-track"><div class="bar-fill green" style="width:${total>0?(ativos/total)*100:0}%">${total>0?((ativos/total)*100).toFixed(1):0}%</div></div><div class="bar-value">${ativos}</div></div>
+        <div class="bar-row"><div class="bar-label">Utilizados</div><div class="bar-track"><div class="bar-fill amber" style="width:${total>0?(utilizados/total)*100:0}%">${total>0?((utilizados/total)*100).toFixed(1):0}%</div></div><div class="bar-value">${utilizados}</div></div>
+        <div class="bar-row"><div class="bar-label">Expirados</div><div class="bar-track"><div class="bar-fill purple" style="width:${total>0?(expirados/total)*100:0}%">${total>0?((expirados/total)*100).toFixed(1):0}%</div></div><div class="bar-value">${expirados}</div></div>
+      </div>
+
+      ${allMonths.length > 0 ? `<div class="report-section"><h3>Evolução Mensal — Emissão, Uso e Exclusões</h3>
+        ${allMonths.map(k => { const emit=monthlyEmission[k]||0, use=monthlyUse[k]||0, del=monthlyDeletion[k]||0; const [y,m]=k.split('-'); const label=new Date(y,m-1,1).toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
+          return `<div class="bar-row"><div class="bar-label">${label}</div>
+            <div class="bar-track" style="display:flex;flex-direction:column;gap:2px;height:auto;background:transparent;">
+              <div style="height:8px;background:#1e293b;border-radius:3px;"><div class="bar-fill" style="width:${(emit/maxMonthly)*100}%;height:100%;font-size:0;"></div></div>
+              <div style="height:8px;background:#1e293b;border-radius:3px;"><div class="bar-fill amber" style="width:${(use/maxMonthly)*100}%;height:100%;font-size:0;"></div></div>
+              <div style="height:8px;background:#1e293b;border-radius:3px;"><div class="bar-fill red" style="width:${(del/maxMonthly)*100}%;height:100%;font-size:0;"></div></div>
+            </div><div class="bar-value" style="font-size:11px;">E:${emit} U:${use} X:${del}</div></div>`;}).join('')}
+        <p style="font-size:11px;color:#94a3b8;margin-top:10px;">Azul: Emitidos &nbsp; Amarelo: Utilizados &nbsp; Vermelho: Excluídos</p></div>` : ''}
+
+      ${expirandoBreve.length > 0 ? `<div class="report-section"><h3>Vouchers Expirando em Até 30 Dias</h3>
+        <div class="table-container"><table>
+          <thead><tr><th>Cliente</th><th>OS</th><th>Telefone</th><th>Expira em</th><th>Dias</th></tr></thead>
+          <tbody>${expirandoBreve.sort((a,b)=>daysUntilExpiry(a)-daysUntilExpiry(b)).map(v=>`<tr><td>${v.clientName||'—'}</td><td>${v.osNumber}</td><td>${formatPhoneDisplay(v.clientPhone)}</td><td>${formatDate(v.expiryDate)}</td><td><span class="badge badge-warning">${daysUntilExpiry(v)} dias</span></td></tr>`).join('')}</tbody>
+        </table></div></div>` : ''}
+
+      ${deletionLog.length > 0 ? `<div class="report-section"><h3>Auditoria de Exclusões</h3>
+        <p style="font-size:12px; color:#94a3b8; margin-bottom:14px;">Histórico permanente de vouchers excluídos com justificativa. Registro imutável.</p>
+        <div class="table-container"><table>
+          <thead><tr><th>OS</th><th>Cliente</th><th>Status anterior</th><th>Excluído em</th><th>Por</th><th>Justificativa</th></tr></thead>
+          <tbody>${deletionLog.slice().sort((a,b)=>(b.deletedTimestamp||0)-(a.deletedTimestamp||0)).map(l=>`<tr>
+            <td>${l.osNumber}</td>
+            <td>${l.clientName || '—'}</td>
+            <td><span class="badge badge-${l.previousStatus === 'ATIVO' ? 'active' : l.previousStatus === 'UTILIZADO' ? 'used' : 'expired'}">${l.previousStatus}</span></td>
+            <td>${l.deletedAt}</td>
+            <td>${l.deletedBy}</td>
+            <td style="max-width:300px; font-size:12px; line-height:1.4;">${l.reason}</td>
+          </tr>`).join('')}</tbody>
+        </table></div></div>` : ''}
+
+      <div class="report-section"><h3>Insights e Recomendações</h3>
+        <ul class="insights-list">${insights.length>0?insights.map(i=>`<li class="${i.type}">${i.text}</li>`).join(''):'<li>Sem insights suficientes ainda.</li>'}</ul></div>
+
+      <div class="report-section"><h3>Auditoria dos Dados</h3>
+        <div style="font-size:12px;line-height:1.8;">
+          <div>Vouchers ativos na base: <strong>${total}</strong></div>
+          <div>Vouchers excluídos historicamente: <strong>${excluidos}</strong></div>
+          <div>Total de emissões realizadas (incluindo excluídos): <strong>${totalComExclusoes}</strong></div>
+          <div>Ativos + Utilizados + Expirados: <strong>${ativos+utilizados+expirados}</strong> ${(ativos+utilizados+expirados)===total?'(consistente)':'(divergência)'}</div>
+          <div>Taxa de resgate = (${utilizados} / ${total}) × 100 = <strong>${taxaResgate}%</strong></div>
+          <div>Taxa de exclusão = (${excluidos} / ${totalComExclusoes}) × 100 = <strong>${taxaExclusao}%</strong></div>
+          <div>Validade aplicada: <strong>365 dias</strong> a partir da emissão</div>
+        </div>
+      </div>
+    `;
+  }
+</script>
+
+</body>
+</html>
