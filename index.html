@@ -1,422 +1,3 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Vouchers - Mecânica Brasil & Parque das Águas</title>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { 
-    getFirestore, collection, doc, setDoc, getDocs, updateDoc, deleteDoc, 
-    query, where, orderBy, addDoc, serverTimestamp 
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDqBMPsW1DYtzC8p7bMV3q7eYLqJZIHGL8",
-    authDomain: "mecanica-brasil-vouchers.firebaseapp.com",
-    projectId: "mecanica-brasil-vouchers",
-    storageBucket: "mecanica-brasil-vouchers.firebasestorage.app",
-    messagingSenderId: "827648839499",
-    appId: "1:827648839499:web:f5dd8934f49a03b85fe2ce"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-
-  // Expor para o resto do código
-  window.firebaseDB = db;
-  window.firestoreFns = { collection, doc, setDoc, getDocs, updateDoc, deleteDoc, query, where, orderBy, addDoc };
-  window.firebaseReady = true;
-  window.dispatchEvent(new Event('firebase-ready'));
-</script>
-<script>
-  if (window['pdfjsLib']) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-  }
-</script>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-  body { background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 20px; }
-  .header { text-align: center; padding: 24px 16px; background: linear-gradient(135deg, #1e293b, #334155); border-radius: 12px; margin-bottom: 24px; border: 1px solid #475569; }
-  .header h1 { font-size: 24px; color: #f1f5f9; margin-bottom: 6px; }
-  .header p { color: #94a3b8; font-size: 13px; }
-  .sync-indicator { display: inline-block; margin-left: 10px; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-  .sync-indicator.online { background: rgba(16,185,129,0.2); color: #10b981; }
-  .sync-indicator.offline { background: rgba(239,68,68,0.2); color: #ef4444; }
-  .sync-indicator.syncing { background: rgba(59,130,246,0.2); color: #3b82f6; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
-  .tab { flex: 1; min-width: 140px; padding: 14px 18px; background: #1e293b; border: 1px solid #334155; border-radius: 10px; color: #cbd5e1; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
-  .tab.active { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; border-color: #2563eb; }
-  .tab:hover { background: #334155; }
-  .tab.active:hover { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
-  .panel { display: none; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 28px; }
-  .panel.active { display: block; }
-  .panel h2 { color: #f1f5f9; font-size: 20px; margin-bottom: 6px; }
-  .panel .subtitle { color: #94a3b8; font-size: 13px; margin-bottom: 24px; }
-  .form-group { display: flex; flex-direction: column; margin-bottom: 16px; }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  label { font-size: 12px; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-  label .hint { color: #10b981; text-transform: none; font-weight: 400; font-size: 11px; }
-  input[type="text"], input[type="tel"], input[type="file"], select, textarea { padding: 12px 14px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 14px; font-family: inherit; }
-  input[type="file"] { padding: 10px; cursor: pointer; }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; }
-  input.auto-filled { border-color: #10b981; background: rgba(16, 185, 129, 0.05); }
-  textarea { resize: vertical; min-height: 80px; }
-  .file-info { margin-top: 6px; font-size: 12px; color: #10b981; }
-  .file-info.error { color: #f59e0b; }
-  .extracted-data { margin-top: 14px; padding: 14px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; display: none; }
-  .extracted-data.show { display: block; }
-  .extracted-data h4 { font-size: 12px; color: #10b981; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-  .extracted-data .item { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
-  .extracted-data .item span:first-child { color: #94a3b8; }
-  .extracted-data .item span:last-child { color: #f1f5f9; font-weight: 600; }
-  .extracted-data .item.missing span:last-child { color: #f59e0b; }
-  .btn { padding: 14px 24px; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; width: 100%; margin-top: 8px; }
-  .btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); }
-  .btn-success { background: linear-gradient(135deg, #10b981, #059669); }
-  .btn-whatsapp { background: linear-gradient(135deg, #25d366, #128c7e); }
-  .btn-secondary { background: #475569; }
-  .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
-  .btn-camera { background: linear-gradient(135deg, #6366f1, #4f46e5); }
-  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-  .alert { padding: 12px 16px; background: rgba(59, 130, 246, 0.15); border-left: 4px solid #3b82f6; border-radius: 6px; margin-bottom: 20px; font-size: 13px; color: #cbd5e1; }
-  .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid #94a3b8; border-top-color: #10b981; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
-  .modal-overlay.show { display: flex; }
-  .modal { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 28px; max-width: 500px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-  .modal h3 { color: #ef4444; font-size: 18px; margin-bottom: 8px; }
-  .modal p { color: #cbd5e1; font-size: 13px; margin-bottom: 18px; line-height: 1.5; }
-  .modal .voucher-summary { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 14px; margin-bottom: 18px; font-size: 13px; }
-  .modal .voucher-summary div { padding: 3px 0; }
-  .modal .voucher-summary strong { color: #f1f5f9; }
-  .char-counter { font-size: 11px; color: #94a3b8; margin-top: 4px; text-align: right; }
-  .char-counter.ok { color: #10b981; }
-  .char-counter.error { color: #ef4444; }
-  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
-  .modal-actions .btn { margin-top: 0; }
-
-  .voucher-wrapper { margin-top: 28px; display: none; }
-  .voucher-wrapper.show { display: block; }
-  .voucher-card { width: 400px; max-width: 100%; margin: 0 auto; background: linear-gradient(160deg, #00b4d8 0%, #0077b6 50%, #023e8a 100%); border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); color: #fff; position: relative; }
-  .voucher-top { padding: 24px 24px 16px; text-align: center; background: rgba(255,255,255,0.08); border-bottom: 2px dashed rgba(255,255,255,0.3); position: relative; }
-  .voucher-top::before, .voucher-top::after { content: ''; position: absolute; bottom: -12px; width: 24px; height: 24px; background: #1e293b; border-radius: 50%; }
-  .voucher-top::before { left: -12px; }
-  .voucher-top::after { right: -12px; }
-  .voucher-emoji { font-size: 48px; margin-bottom: 8px; }
-  .voucher-title { font-size: 22px; font-weight: 800; letter-spacing: 1px; margin-bottom: 4px; text-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-  .voucher-subtitle { font-size: 13px; opacity: 0.9; font-weight: 500; }
-  .voucher-body { padding: 24px; text-align: center; }
-  .voucher-greeting { font-size: 15px; margin-bottom: 14px; font-weight: 600; }
-  .voucher-gift { background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3); border-radius: 14px; padding: 18px 16px; margin-bottom: 18px; }
-  .voucher-gift-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; opacity: 0.85; margin-bottom: 6px; }
-  .voucher-gift-value { font-size: 28px; font-weight: 800; line-height: 1.2; }
-  .voucher-gift-value small { display: block; font-size: 13px; font-weight: 500; opacity: 0.9; margin-top: 4px; }
-  .voucher-message { font-size: 14px; line-height: 1.6; margin-bottom: 20px; padding: 16px; background: rgba(255,255,255,0.1); border-radius: 12px; font-style: italic; }
-  .voucher-message strong { font-style: normal; }
-  .voucher-qr-area { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 16px; display: flex; flex-direction: column; align-items: center; }
-  .voucher-qr-label { font-size: 11px; color: #0077b6; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
-  .voucher-codes { background: rgba(0,0,0,0.25); border-radius: 10px; padding: 12px; margin-bottom: 14px; }
-  .voucher-codes div { font-size: 12px; margin: 4px 0; }
-  .voucher-codes strong { font-size: 15px; font-weight: 700; letter-spacing: 1px; }
-  .voucher-validity { background: rgba(255, 215, 0, 0.2); border: 1px solid rgba(255, 215, 0, 0.4); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 12px; }
-  .voucher-validity strong { font-size: 14px; color: #ffd700; }
-  .voucher-footer { padding: 14px 24px; background: rgba(0,0,0,0.2); text-align: center; font-size: 11px; line-height: 1.5; opacity: 0.95; }
-  .voucher-footer strong { font-size: 13px; }
-
-  .actions-row { margin-top: 24px; display: grid; gap: 10px; max-width: 400px; margin-left: auto; margin-right: auto; }
-  .whatsapp-box { margin-top: 20px; padding: 18px; background: rgba(37, 211, 102, 0.1); border: 1px solid rgba(37, 211, 102, 0.3); border-radius: 10px; max-width: 400px; margin-left: auto; margin-right: auto; }
-  .whatsapp-box label { color: #25d366; }
-
-  .totem { text-align: center; padding: 20px; max-width: 700px; margin: 0 auto; }
-  .totem-header { margin-bottom: 24px; }
-  .totem-icon { font-size: 64px; margin-bottom: 12px; }
-  .totem-header h3 { font-size: 24px; color: #f1f5f9; margin-bottom: 6px; }
-  .totem-header p { color: #94a3b8; font-size: 14px; }
-  .scanner-container { background: #0f172a; border: 2px solid #334155; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
-  .scanner-status { font-size: 13px; color: #94a3b8; margin-bottom: 14px; padding: 10px; background: #1e293b; border-radius: 8px; }
-  .scanner-status.active { color: #10b981; background: rgba(16,185,129,0.1); }
-  .scanner-status.error { color: #ef4444; background: rgba(239,68,68,0.1); }
-  #qr-reader { border-radius: 12px; overflow: hidden; max-width: 500px; margin: 0 auto; }
-  #qr-reader video { border-radius: 12px; }
-  #qr-reader__dashboard_section { padding: 10px !important; }
-  #qr-reader__dashboard_section_csr button { background: #3b82f6 !important; color: #fff !important; border: none !important; padding: 10px 20px !important; border-radius: 8px !important; cursor: pointer !important; font-weight: 600 !important; }
-  #qr-reader__camera_selection { background: #1e293b !important; color: #f1f5f9 !important; border: 1px solid #334155 !important; padding: 8px !important; border-radius: 6px !important; margin-bottom: 10px !important; }
-  #qr-reader__dashboard_section_swaplink { color: #3b82f6 !important; }
-  #qr-reader__filescan_input { color: #cbd5e1 !important; }
-  #qr-reader__header_message { color: #94a3b8 !important; }
-  .scanner-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
-  .scanner-actions .btn { margin-top: 0; }
-  .manual-divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
-  .manual-divider::before, .manual-divider::after { content: ''; flex: 1; height: 1px; background: #334155; }
-  .manual-search { max-width: 500px; margin: 0 auto; }
-  .result { margin-top: 24px; padding: 24px; border-radius: 10px; max-width: 500px; margin-left: auto; margin-right: auto; display: none; }
-  .result.show { display: block; }
-  .result.valid { background: rgba(16, 185, 129, 0.15); border: 2px solid #10b981; }
-  .result.invalid { background: rgba(239, 68, 68, 0.15); border: 2px solid #ef4444; }
-  .result.used { background: rgba(245, 158, 11, 0.15); border: 2px solid #f59e0b; }
-  .result.expired { background: rgba(168, 85, 247, 0.15); border: 2px solid #a855f7; }
-  .result h4 { font-size: 18px; margin-bottom: 12px; }
-  .result.valid h4 { color: #10b981; }
-  .result.invalid h4 { color: #ef4444; }
-  .result.used h4 { color: #f59e0b; }
-  .result.expired h4 { color: #a855f7; }
-  .result-info { text-align: left; background: rgba(0,0,0,0.2); padding: 16px; border-radius: 8px; margin: 12px 0; }
-  .result-info div { padding: 6px 0; font-size: 13px; }
-
-  .table-container { margin-top: 24px; overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; background: #0f172a; border-radius: 8px; overflow: hidden; min-width: 1000px; }
-  th { background: #334155; padding: 12px; text-align: left; font-size: 12px; color: #cbd5e1; text-transform: uppercase; }
-  td { padding: 12px; border-top: 1px solid #1e293b; font-size: 13px; vertical-align: middle; }
-  .badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
-  .badge-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-  .badge-used { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-  .badge-expired { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
-  .badge-warning { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-  .empty { text-align: center; padding: 40px; color: #64748b; }
-  .delete-btn { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s; }
-  .delete-btn:hover { background: rgba(239, 68, 68, 0.3); }
-
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
-  .kpi-card { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #334155; border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
-  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--c, #3b82f6); }
-  .kpi-card.green { --c: #10b981; }
-  .kpi-card.amber { --c: #f59e0b; }
-  .kpi-card.purple { --c: #a855f7; }
-  .kpi-card.red { --c: #ef4444; }
-  .kpi-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 600; }
-  .kpi-value { font-size: 32px; font-weight: 800; color: #f1f5f9; line-height: 1; }
-  .kpi-sub { font-size: 12px; color: #94a3b8; margin-top: 6px; }
-  .report-section { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-  .report-section h3 { font-size: 15px; color: #f1f5f9; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #334155; }
-  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; font-size: 13px; }
-  .bar-label { min-width: 140px; color: #cbd5e1; }
-  .bar-track { flex: 1; height: 22px; background: #1e293b; border-radius: 4px; overflow: hidden; position: relative; }
-  .bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); border-radius: 4px; display: flex; align-items: center; padding-left: 8px; color: #fff; font-size: 11px; font-weight: 600; transition: width 0.6s; }
-  .bar-fill.green { background: linear-gradient(90deg, #10b981, #059669); }
-  .bar-fill.amber { background: linear-gradient(90deg, #f59e0b, #d97706); }
-  .bar-fill.purple { background: linear-gradient(90deg, #a855f7, #7c3aed); }
-  .bar-fill.red { background: linear-gradient(90deg, #ef4444, #dc2626); }
-  .bar-value { min-width: 60px; text-align: right; color: #f1f5f9; font-weight: 600; }
-  .insights-list { list-style: none; padding: 0; }
-  .insights-list li { padding: 10px 14px; background: #1e293b; border-left: 3px solid #3b82f6; border-radius: 6px; margin-bottom: 8px; font-size: 13px; line-height: 1.5; }
-  .insights-list li.warning { border-left-color: #f59e0b; }
-  .insights-list li.danger { border-left-color: #ef4444; }
-  .insights-list li.success { border-left-color: #10b981; }
-  .filter-bar { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-  .filter-bar select { padding: 8px 12px; }
-
-  .loading-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; flex-direction: column; gap: 14px; }
-  .loading-overlay .loader { width: 40px; height: 40px; border-width: 4px; }
-  .loading-overlay p { color: #cbd5e1; font-size: 14px; }
-  .loading-overlay.hidden { display: none; }
-
-  @media (max-width: 480px) {
-    .voucher-card { width: 100%; }
-    .form-row { grid-template-columns: 1fr; }
-    .scanner-actions { grid-template-columns: 1fr; }
-  }
-</style>
-</head>
-<body>
-
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="loader"></div>
-  <p id="loadingText">Conectando ao banco de dados...</p>
-</div>
-
-<div class="header">
-  <h1>Mecânica Brasil — Vouchers Parque das Águas <span class="sync-indicator syncing" id="syncIndicator">Conectando...</span></h1>
-  <p>Emissão automática • Validade de 1 ano • Sincronização em nuvem</p>
-</div>
-
-<div class="tabs">
-  <button class="tab active" onclick="switchTab(0)">Emitir</button>
-  <button class="tab" onclick="switchTab(1)">Totem</button>
-  <button class="tab" onclick="switchTab(2)">Vouchers</button>
-  <button class="tab" onclick="switchTab(3)">Relatório</button>
-</div>
-
-<div class="panel active" id="panel-0">
-  <h2>Emissão de Voucher</h2>
-  <p class="subtitle">Anexe o PDF da OS — número, nome e telefone serão extraídos automaticamente</p>
-  
-  <div class="alert">
-    O sistema lê o PDF e identifica automaticamente: <strong>OS</strong>, <strong>cliente</strong> e <strong>telefone</strong>.<br>
-    Cada voucher tem <strong>validade de 1 ano</strong> a partir da emissão.
-  </div>
-
-  <div class="form-group">
-    <label>Arquivo da Ordem de Serviço (PDF preferencialmente)</label>
-    <input type="file" id="osFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-    <div class="file-info" id="fileInfo"></div>
-    <div class="extracted-data" id="extractedData">
-      <h4>Dados extraídos do documento</h4>
-      <div class="item" id="exOs"><span>OS:</span><span>—</span></div>
-      <div class="item" id="exName"><span>Cliente:</span><span>—</span></div>
-      <div class="item" id="exPhone"><span>Telefone:</span><span>—</span></div>
-    </div>
-  </div>
-
-  <div class="form-row">
-    <div class="form-group">
-      <label>Número da OS <span class="hint">(automático)</span></label>
-      <input type="text" id="osNumber" placeholder="Aguardando upload...">
-    </div>
-    <div class="form-group">
-      <label>Nome do Cliente <span class="hint">(automático)</span></label>
-      <input type="text" id="clientName" placeholder="Aguardando upload...">
-    </div>
-  </div>
-
-  <div class="form-group">
-    <label>Telefone (WhatsApp) <span class="hint">(automático — número do cliente)</span></label>
-    <input type="tel" id="clientPhone" placeholder="Ex: 65999998888">
-  </div>
-
-  <button class="btn btn-success" onclick="generateVoucher()">Gerar Voucher</button>
-
-  <div class="voucher-wrapper" id="voucherWrapper">
-    <div class="voucher-card" id="voucherCard">
-      <div class="voucher-top">
-        <div class="voucher-emoji">🌊</div>
-        <div class="voucher-title">PARQUE DAS ÁGUAS</div>
-        <div class="voucher-subtitle">Voucher Cortesia Exclusiva</div>
-      </div>
-      <div class="voucher-body">
-        <div class="voucher-greeting" id="vGreeting">Olá!</div>
-        <div class="voucher-gift">
-          <div class="voucher-gift-label">Você ganhou</div>
-          <div class="voucher-gift-value">2 ACESSOS<small>ao Parque das Águas</small></div>
-        </div>
-        <div class="voucher-message">
-          "Obrigado por confiar nos serviços da <strong>Mecânica Brasil</strong>!<br>
-          Como forma de agradecimento, presenteamos você com este voucher.<br>
-          <strong>Aproveite!</strong>"
-        </div>
-        <div class="voucher-qr-area">
-          <div id="qrcode"></div>
-          <div class="voucher-qr-label">Apresente no totem do parque</div>
-        </div>
-        <div class="voucher-validity">Válido até: <strong id="vExpiry">—</strong></div>
-        <div class="voucher-codes">
-          <div>OS: <strong id="vOs">—</strong></div>
-          <div>Emitido em: <strong id="vDate">—</strong></div>
-        </div>
-      </div>
-      <div class="voucher-footer">
-        <strong>Como usar:</strong> apresente este voucher no totem do parque<br>
-        para validação via QR Code.<br>
-        <em>Voucher pessoal e intransferível • Não cumulativo</em>
-      </div>
-    </div>
-
-    <div class="actions-row">
-      <button class="btn btn-secondary" onclick="downloadVoucher()">Baixar Voucher como Imagem</button>
-    </div>
-
-    <div class="whatsapp-box">
-      <div class="form-group" style="margin-bottom: 10px;">
-        <label>Número do WhatsApp do Cliente</label>
-        <input type="tel" id="whatsNumber" placeholder="Ex: 65999998888">
-      </div>
-      <button class="btn btn-whatsapp" onclick="sendWhatsApp()">Enviar por WhatsApp</button>
-      <p style="font-size: 11px; color: #94a3b8; margin-top: 10px; text-align: center;">
-        Anexe a imagem baixada do voucher ao enviar.
-      </p>
-    </div>
-  </div>
-</div>
-
-<div class="panel" id="panel-1">
-  <h2>Totem de Validação — Parque das Águas</h2>
-  <p class="subtitle">Aponte o QR Code do voucher para a câmera</p>
-  
-  <div class="totem">
-    <div class="totem-header">
-      <div class="totem-icon">📷</div>
-      <h3>Validação por QR Code</h3>
-      <p>O sistema acessa a câmera e lê o QR Code automaticamente</p>
-    </div>
-
-    <div class="scanner-container">
-      <div class="scanner-status" id="scannerStatus">Câmera desligada — clique em "Ligar Câmera" para iniciar</div>
-      <div id="qr-reader" style="width: 100%;"></div>
-      
-      <div class="scanner-actions">
-        <button class="btn btn-camera" id="startScannerBtn" onclick="startScanner()">Ligar Câmera</button>
-        <button class="btn btn-secondary" id="stopScannerBtn" onclick="stopScanner()" disabled>Desligar Câmera</button>
-      </div>
-    </div>
-
-    <div class="manual-divider">ou validação manual</div>
-
-    <div class="manual-search">
-      <div class="form-group">
-        <input type="text" id="searchCode" placeholder="Digite o número da OS" style="text-align: center; font-size: 18px; padding: 16px;">
-      </div>
-      <button class="btn" onclick="validateVoucher(document.getElementById('searchCode').value)">Buscar e Validar</button>
-    </div>
-
-    <div class="result" id="validationResult"></div>
-  </div>
-</div>
-
-<div class="panel" id="panel-2">
-  <h2>Vouchers Emitidos</h2>
-  <p class="subtitle">Histórico completo • Status atualizado automaticamente</p>
-  <div class="filter-bar">
-    <select id="statusFilter" onchange="renderTable()">
-      <option value="">Todos os status</option>
-      <option value="ATIVO">Ativos</option>
-      <option value="UTILIZADO">Utilizados</option>
-      <option value="EXPIRADO">Expirados</option>
-    </select>
-    <input type="text" id="searchFilter" placeholder="Buscar por OS, cliente ou voucher..." onkeyup="renderTable()" style="flex:1; min-width:200px;">
-    <button class="btn btn-secondary" style="width: auto; margin-top: 0; padding: 8px 16px;" onclick="loadFromFirestore(true)">Atualizar</button>
-  </div>
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr><th>OS</th><th>Cliente</th><th>Telefone</th><th>Emissão</th><th>Validade</th><th>Status</th><th>Uso</th><th>Ações</th></tr>
-      </thead>
-      <tbody id="vouchersBody"><tr><td colspan="8" class="empty">Carregando...</td></tr></tbody>
-    </table>
-  </div>
-</div>
-
-<div class="panel" id="panel-3">
-  <h2>Relatório de Uso de Vouchers</h2>
-  <p class="subtitle">Análise consolidada de emissão, resgate e desempenho</p>
-  <div id="reportContent"></div>
-</div>
-
-<div class="modal-overlay" id="deleteModal">
-  <div class="modal">
-    <h3>Excluir Voucher</h3>
-    <p>Esta ação é <strong>irreversível</strong>. O voucher será removido da base ativa, mas o registro de exclusão será mantido permanentemente para auditoria.</p>
-    <div class="voucher-summary" id="deleteVoucherSummary"></div>
-    <div class="form-group">
-      <label>Justificativa da exclusão <span class="hint">(mínimo 30 caracteres)</span></label>
-      <textarea id="deleteReason" placeholder="Descreva o motivo da exclusão. Ex: voucher emitido em duplicidade para a OS X, número incorreto solicitado pelo cliente, etc."></textarea>
-      <div class="char-counter" id="charCounter">0 / 30 caracteres</div>
-    </div>
-    <div class="form-group">
-      <label>Responsável pela exclusão</label>
-      <input type="text" id="deletedBy" placeholder="Seu nome">
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancelar</button>
-      <button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()" disabled>Confirmar Exclusão</button>
-    </div>
-  </div>
-</div>
-
 <script>
   const VALIDITY_MS = 365 * 24 * 60 * 60 * 1000;
   const COMPANY_PHONES = ['6596167870', '65996167870'];
@@ -431,6 +12,15 @@
   let lastScannedCode = null;
   let lastScanTime = 0;
   let firebaseInitialized = false;
+
+  // ✅ NOVO: controla se o documento foi processado com sucesso e tem nome válido
+  let extractionState = {
+    fileAttached: false,   // um arquivo foi selecionado
+    fileProcessed: false,  // o arquivo foi lido (PDF processado, mesmo que parcial)
+    osFound: null,
+    nameFound: null,
+    phoneFound: null
+  };
 
   // ===== INICIALIZAÇÃO COM FIREBASE =====
   function setSyncStatus(status, text) {
@@ -455,15 +45,14 @@
       dSnap.forEach(d => deletionLog.push({ ...d.data(), _docId: d.id }));
 
       setSyncStatus('online', 'Online ✓');
-      
-      // Re-renderiza painéis ativos
+
       const activePanel = document.querySelector('.panel.active');
       if (activePanel) {
         const idx = activePanel.id.replace('panel-', '');
         if (idx === '2') renderTable();
         if (idx === '3') renderReport();
       }
-      
+
       if (showFeedback) {
         const ind = document.getElementById('syncIndicator');
         ind.textContent = 'Atualizado ✓';
@@ -482,7 +71,6 @@
     document.getElementById('loadingOverlay').classList.add('hidden');
   });
 
-  // Timeout de segurança: se Firebase não carregar em 10s, libera a UI mesmo assim
   setTimeout(() => {
     if (!firebaseInitialized) {
       document.getElementById('loadingOverlay').classList.add('hidden');
@@ -602,16 +190,30 @@
     document.getElementById('exPhone').className = 'item' + (phone ? '' : ' missing');
   }
 
+  // ✅ ALTERADO: controla estado de extração + trava/libera campos
   document.getElementById('osFile').addEventListener('change', async function(e) {
     const file = e.target.files[0];
+
+    // Reseta estado a cada novo arquivo selecionado
+    extractionState = { fileAttached: false, fileProcessed: false, osFound: null, nameFound: null, phoneFound: null };
+    document.getElementById('osNumber').value = '';
+    document.getElementById('clientName').value = '';
+    document.getElementById('clientPhone').value = '';
+    document.getElementById('osNumber').classList.remove('auto-filled');
+    document.getElementById('clientName').classList.remove('auto-filled');
+    document.getElementById('clientPhone').classList.remove('auto-filled');
+    document.getElementById('clientName').readOnly = true;
+    document.getElementById('nameHint').textContent = '(extraído do documento da OS)';
+
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) { alert('Arquivo muito grande (10MB).'); this.value=''; return; }
+
+    extractionState.fileAttached = true;
+    currentFile = { name: file.name, type: file.type };
+
     const fi = document.getElementById('fileInfo');
     fi.className = 'file-info';
     fi.innerHTML = '<span class="loader"></span> Lendo arquivo...';
-    
-    // Marca que tem arquivo (mas NÃO armazena no banco)
-    currentFile = { name: file.name, type: file.type };
 
     if (file.type === 'application/pdf') {
       try {
@@ -620,32 +222,82 @@
         const os = extractOSNumber(text);
         const name = extractClientName(text);
         const phone = extractPhone(text);
+
+        extractionState.fileProcessed = true;
+        extractionState.osFound = os;
+        extractionState.nameFound = name;
+        extractionState.phoneFound = phone;
+
         if (os) { document.getElementById('osNumber').value = os; document.getElementById('osNumber').classList.add('auto-filled'); }
-        if (name) { document.getElementById('clientName').value = name; document.getElementById('clientName').classList.add('auto-filled'); }
+        if (name) {
+          document.getElementById('clientName').value = name;
+          document.getElementById('clientName').classList.add('auto-filled');
+          document.getElementById('clientName').readOnly = true; // ✅ nome travado quando extraído
+          document.getElementById('nameHint').textContent = '(extraído do documento da OS — não editável)';
+        } else {
+          // ✅ Não foi possível extrair o nome: libera edição manual, mas sinaliza claramente
+          document.getElementById('clientName').readOnly = false;
+          document.getElementById('nameHint').textContent = '(NÃO extraído — confira o cadastro da OS e digite manualmente)';
+        }
         if (phone) { document.getElementById('clientPhone').value = phone; document.getElementById('clientPhone').classList.add('auto-filled'); }
+
         updateExtractedDisplay(os, name, phone);
         const count = [os, name, phone].filter(Boolean).length;
         fi.innerHTML = `<strong>${file.name}</strong> — ${count}/3 dados extraídos (PDF descartado após leitura)`;
         if (count < 3) fi.className = 'file-info error';
+
+        if (!os) {
+          fi.className = 'file-info error';
+          fi.innerHTML += '<br>⚠️ Número da OS não localizado — não será possível gerar o voucher sem ele.';
+        }
       } catch (err) {
+        extractionState.fileProcessed = false;
         fi.className = 'file-info error';
-        fi.innerHTML = 'Falha ao ler PDF. Preencha manualmente.';
+        fi.innerHTML = '⚠️ Falha ao ler o PDF. Anexe um arquivo válido da OS.';
+        document.getElementById('clientName').readOnly = false;
+        document.getElementById('nameHint').textContent = '(falha na leitura — digite manualmente conforme o cadastro da OS)';
       }
     } else {
-      fi.innerHTML = `<strong>${file.name}</strong> — extração automática só para PDF`;
+      // Arquivo não é PDF: não há extração automática confiável
+      extractionState.fileProcessed = false;
+      fi.className = 'file-info error';
+      fi.innerHTML = `<strong>${file.name}</strong> — extração automática só é feita em PDF. Prefira anexar o PDF da OS.`;
+      document.getElementById('clientName').readOnly = false;
+      document.getElementById('osNumber').readOnly = false;
+      document.getElementById('nameHint').textContent = '(arquivo não é PDF — digite manualmente exatamente como está no cadastro da OS)';
     }
   });
 
   // ===== GERAR VOUCHER (SALVA NO FIRESTORE) =====
   async function generateVoucher() {
     if (!window.firebaseReady) { alert('Aguarde a conexão com o banco de dados.'); return; }
-    
-    const osNumber = document.getElementById('osNumber').value.trim();
+
+    // ✅ OBRIGATORIEDADE DO ARQUIVO DA OS
+    if (!extractionState.fileAttached || !currentFile) {
+      alert('É obrigatório anexar o arquivo da Ordem de Serviço antes de gerar o voucher.');
+      document.getElementById('osFile').focus();
+      return;
+    }
+
+    const osNumber = document.getElementById('osNumber').value.trim().replace(/\s+/g, '');
     const clientName = document.getElementById('clientName').value.trim();
     const clientPhoneRaw = document.getElementById('clientPhone').value.replace(/\D/g, '');
 
-    if (!osNumber) { alert('Número da OS não informado.'); return; }
-    if (!currentFile) { alert('Anexe o arquivo da OS.'); return; }
+    if (!osNumber) {
+      alert('Número da OS não identificado no documento. Verifique o arquivo anexado.');
+      return;
+    }
+    if (!clientName) {
+      alert('Nome do cliente não identificado. Confira o cadastro da OS e preencha o campo antes de continuar.');
+      document.getElementById('clientName').focus();
+      return;
+    }
+    // ✅ Se o nome foi extraído automaticamente, garante que não foi adulterado
+    if (extractionState.nameFound && clientName !== extractionState.nameFound) {
+      alert('O nome do cliente não pode ser alterado — deve ser o mesmo do cadastro na Ordem de Serviço.');
+      document.getElementById('clientName').value = extractionState.nameFound;
+      return;
+    }
     if (clientPhoneRaw && isCompanyPhone(clientPhoneRaw)) {
       alert('O número informado é o da Mecânica Brasil, não do cliente. Corrija antes de gerar o voucher.');
       document.getElementById('clientPhone').focus();
@@ -668,7 +320,7 @@
 
     try {
       setSyncStatus('syncing', 'Salvando...');
-      const { collection, doc, setDoc } = window.firestoreFns;
+      const { doc, setDoc } = window.firestoreFns;
       const db = window.firebaseDB;
       await setDoc(doc(db, 'vouchers', voucherId), voucher);
       voucher._docId = voucherId;
@@ -690,13 +342,30 @@
 
     document.getElementById('qrcode').innerHTML = '';
     new QRCode(document.getElementById('qrcode'), {
-      text: JSON.stringify({ voucherId, osNumber }), 
+      text: JSON.stringify({ voucherId, osNumber }),
       width: 130, height: 130,
       correctLevel: QRCode.CorrectLevel.H
     });
     document.getElementById('whatsNumber').value = clientPhoneRaw;
     document.getElementById('voucherWrapper').classList.add('show');
     document.getElementById('voucherWrapper').scrollIntoView({ behavior: 'smooth' });
+
+    // ✅ Reseta o formulário/estado para a próxima emissão
+    resetIssuanceForm();
+  }
+
+  // ✅ NOVO: reseta o formulário de emissão após gerar o voucher
+  function resetIssuanceForm() {
+    extractionState = { fileAttached: false, fileProcessed: false, osFound: null, nameFound: null, phoneFound: null };
+    currentFile = null;
+    document.getElementById('osFile').value = '';
+    document.getElementById('osNumber').value = '';
+    document.getElementById('clientName').value = '';
+    document.getElementById('clientPhone').value = '';
+    document.getElementById('clientName').readOnly = true;
+    document.getElementById('nameHint').textContent = '(extraído do documento da OS)';
+    document.getElementById('fileInfo').innerHTML = '';
+    document.getElementById('extractedData').classList.remove('show');
   }
 
   function downloadVoucher() {
@@ -815,26 +484,25 @@ Aproveite muito!`;
 
   function onScanFailure(error) { /* silencioso */ }
 
-  // ===== VALIDAÇÃO (RECARREGA DO FIRESTORE PARA GARANTIR FRESCOR) =====
+  // ===== VALIDAÇÃO =====
   async function validateVoucher(input) {
     const raw = (input || '').trim();
     const box = document.getElementById('validationResult');
     if (!raw) { alert('Código vazio.'); return; }
-    
-    // Recarrega antes de validar para garantir status atualizado entre dispositivos
+
     await loadFromFirestore();
-    
+
     let key = raw.toUpperCase();
     try {
       const p = JSON.parse(raw);
       key = (p.voucherId || p.osNumber || '').toUpperCase();
     } catch(e) {}
 
-    const v = vouchers.find(x => 
-      (x.voucherId || '').toUpperCase() === key || 
+    const v = vouchers.find(x =>
+      (x.voucherId || '').toUpperCase() === key ||
       (x.osNumber || '').toUpperCase() === key
     );
-    
+
     box.classList.add('show');
     box.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
@@ -845,9 +513,9 @@ Aproveite muito!`;
       setScannerStatus('Voucher não encontrado — tente outro QR Code', 'error');
       return;
     }
-    
+
     const status = getStatus(v);
-    
+
     if (status === 'EXPIRADO') {
       box.className = 'result show expired';
       box.innerHTML = `<h4>Voucher Expirado</h4>
@@ -860,7 +528,7 @@ Aproveite muito!`;
       setScannerStatus('Voucher expirado', 'error');
       return;
     }
-    
+
     if (status === 'UTILIZADO') {
       box.className = 'result show used';
       box.innerHTML = `<h4>Voucher Já Utilizado</h4>
@@ -873,7 +541,7 @@ Aproveite muito!`;
       setScannerStatus('Voucher já utilizado', 'error');
       return;
     }
-    
+
     const days = daysUntilExpiry(v);
     box.className = 'result show valid';
     box.innerHTML = `<h4>Voucher Válido — Acesso Liberado</h4>
@@ -895,11 +563,11 @@ Aproveite muito!`;
     if (scannerActive) setScannerStatus('Câmera ativa — aponte o QR Code do voucher', 'active');
   }
 
-  // ===== CONFIRMAR USO (ATUALIZA NO FIRESTORE) =====
+  // ===== CONFIRMAR USO =====
   async function confirmUse(voucherId) {
     const v = vouchers.find(x => x.voucherId === voucherId);
     if (!v) return;
-    
+
     const usedAt = new Date().toLocaleString('pt-BR');
     const usedTimestamp = Date.now();
 
@@ -929,7 +597,7 @@ Aproveite muito!`;
     setScannerStatus('Entrada confirmada — pronto para próxima validação', 'active');
   }
 
-  // ===== EXCLUSÃO COM AUDITORIA (FIRESTORE) =====
+  // ===== EXCLUSÃO COM AUDITORIA =====
   function openDeleteModal(voucherId) {
     const v = vouchers.find(x => x.voucherId === voucherId);
     if (!v) return;
@@ -990,12 +658,10 @@ Aproveite muito!`;
       setSyncStatus('syncing', 'Excluindo...');
       const { collection, doc, deleteDoc, addDoc } = window.firestoreFns;
       const db = window.firebaseDB;
-      
-      // 1. Salva log
+
       await addDoc(collection(db, 'deletionLog'), logEntry);
-      // 2. Deleta voucher
       await deleteDoc(doc(db, 'vouchers', voucherToDelete._docId || voucherToDelete.voucherId));
-      
+
       deletionLog.push(logEntry);
       vouchers = vouchers.filter(v => v.voucherId !== voucherToDelete.voucherId);
       setSyncStatus('online', 'Online ✓');
@@ -1019,7 +685,7 @@ Aproveite muito!`;
     let list = vouchers.map(v => ({...v, _status: getStatus(v)}));
     list.sort((a, b) => (b.issueTimestamp || 0) - (a.issueTimestamp || 0));
     if (filterStatus) list = list.filter(v => v._status === filterStatus);
-    if (search) list = list.filter(v => 
+    if (search) list = list.filter(v =>
       (v.osNumber || '').toLowerCase().includes(search) ||
       (v.clientName || '').toLowerCase().includes(search) ||
       (v.voucherId || '').toLowerCase().includes(search));
@@ -1149,6 +815,3 @@ Aproveite muito!`;
     `;
   }
 </script>
-
-</body>
-</html>
