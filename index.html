@@ -1640,10 +1640,7 @@ Aproveite muito!`;
 </div>
 
 <script>
-  const VALIDITY_MS = 365 * 24 * 60 * 60 * 1000;
-  const COMPANY_PHONES = ['6596167870', '65996167870'];
-
-  // ===== PADRÕES DE DOCUMENTO: CPF OU CNPJ =====
+   // ===== PADRÕES DE DOCUMENTO: CPF OU CNPJ =====
   const CPF_SRC = '\\d{3}\\.\\d{3}\\.\\d{3}-\\d{2}';
   const CNPJ_SRC = '\\d{2}\\.\\d{3}\\.\\d{3}\\/\\d{4}-\\d{2}';
   const DOC_SRC = `(?:${CPF_SRC}|${CNPJ_SRC})`;
