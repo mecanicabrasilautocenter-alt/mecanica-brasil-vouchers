@@ -181,6 +181,7 @@
   .empty { text-align: center; padding: 40px; color: #64748b; }
   .delete-btn { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s; }
   .delete-btn:hover { background: rgba(239, 68, 68, 0.3); }
+  .delete-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
   .kpi-card { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #334155; border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
@@ -433,6 +434,7 @@
   let currentFile = null;
   let currentVoucherId = null;
   let voucherToDelete = null;
+  let isDeleting = false;
   let html5QrCode = null;
   let scannerActive = false;
   let lastScannedCode = null;
@@ -534,9 +536,10 @@
     return null;
   }
 
+  // Corrigido: aceita "NOME // DOC" ou "NOME // [qualquer coisa] // DOC"
   function extractClientName(text) {
     const mainRegex = new RegExp(
-      `([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ\\s]{4,80}?)\\s*(?:\\[[^\\]]*\\])?\\s*\\/\\/\\s*${DOC_SRC}`
+      `([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ\\s]{4,80}?)\\s*\\/\\/\\s*(?:\\[[^\\]]*\\]\\s*\\/\\/\\s*)?${DOC_SRC}`
     );
     let m = text.match(mainRegex);
     if (m && m[1]) return cleanName(m[1]);
@@ -1001,6 +1004,8 @@ Aproveite muito!`;
     const v = vouchers.find(x => x.voucherId === voucherId);
     if (!v) return;
     voucherToDelete = v;
+    isDeleting = false;
+    document.getElementById('confirmDeleteBtn').textContent = 'Confirmar Exclusão';
     document.getElementById('deleteVoucherSummary').innerHTML = `
       <div><strong>OS:</strong> ${v.osNumber}</div>
       <div><strong>Cliente:</strong> ${v.clientName || '—'}</div>
@@ -1019,6 +1024,7 @@ Aproveite muito!`;
   function closeDeleteModal() {
     document.getElementById('deleteModal').classList.remove('show');
     voucherToDelete = null;
+    isDeleting = false;
   }
 
   document.getElementById('deleteReason').addEventListener('input', function() {
@@ -1035,10 +1041,27 @@ Aproveite muito!`;
   });
 
   async function confirmDelete() {
+    // Bloqueia execuções simultâneas / cliques duplicados
+    if (isDeleting) return;
     if (!voucherToDelete) return;
+
     const reason = document.getElementById('deleteReason').value.trim();
     const deletedBy = document.getElementById('deletedBy').value.trim() || 'Não informado';
     if (reason.length < 30) { alert('A justificativa deve ter no mínimo 30 caracteres.'); return; }
+
+    // Confirma que o voucher ainda existe na base local antes de prosseguir
+    const stillExists = vouchers.some(v => v.voucherId === voucherToDelete.voucherId);
+    if (!stillExists) {
+      alert('Este voucher já foi excluído anteriormente.');
+      closeDeleteModal();
+      renderTable();
+      return;
+    }
+
+    isDeleting = true;
+    const btn = document.getElementById('confirmDeleteBtn');
+    btn.disabled = true;
+    btn.textContent = 'Excluindo...';
 
     const logEntry = {
       voucherId: voucherToDelete.voucherId,
@@ -1057,10 +1080,10 @@ Aproveite muito!`;
       setSyncStatus('syncing', 'Excluindo...');
       const { collection, doc, deleteDoc, addDoc } = window.firestoreFns;
       const db = window.firebaseDB;
-      
+
       await addDoc(collection(db, 'deletionLog'), logEntry);
       await deleteDoc(doc(db, 'vouchers', voucherToDelete._docId || voucherToDelete.voucherId));
-      
+
       deletionLog.push(logEntry);
       vouchers = vouchers.filter(v => v.voucherId !== voucherToDelete.voucherId);
       setSyncStatus('online', 'Online ✓');
@@ -1068,9 +1091,13 @@ Aproveite muito!`;
       console.error('Erro ao excluir:', err);
       setSyncStatus('offline', 'Erro ao excluir');
       alert('Erro ao excluir o voucher. Tente novamente.');
+      isDeleting = false;
+      btn.disabled = false;
+      btn.textContent = 'Confirmar Exclusão';
       return;
     }
 
+    isDeleting = false;
     closeDeleteModal();
     renderTable();
     alert(`Voucher da OS ${logEntry.osNumber} excluído. Registro de auditoria salvo.`);
