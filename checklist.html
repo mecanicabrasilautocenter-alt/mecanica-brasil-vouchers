@@ -314,47 +314,55 @@ let loadedImages = {};
 
 // ============================================================
 // 🔧 CACHE GLOBAL DE MÍDIAS DO RELATÓRIO
-// Os botões do relatório usam APENAS o ID para buscar aqui
 // ============================================================
 window._reportMediaCache = {};
 
 // ============================================================
-// 📥 DOWNLOAD - Busca o dado pelo ID no cache global
+// 📥 DOWNLOAD - Função global que funciona no app E no HTML exportado
 // ============================================================
 window.downloadMediaById = function(mediaId, fileName) {
-    const dataUrl = window._reportMediaCache[mediaId];
+    var dataUrl = null;
+    if (window._reportMediaCache && window._reportMediaCache[mediaId]) {
+        dataUrl = window._reportMediaCache[mediaId];
+    }
     if (!dataUrl) {
-        alert('❌ Mídia não encontrada no cache. Tente gerar o relatório novamente.');
+        alert('Mídia não encontrada no relatório. Tente gerar o relatório novamente.');
         return;
     }
     try {
-        const a = document.createElement('a');
+        var a = document.createElement('a');
         a.href = dataUrl;
         a.download = fileName;
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
-        setTimeout(function() { document.body.removeChild(a); }, 200);
-        if (typeof showToast === 'function') showToast('💾 Baixando: ' + fileName);
+        setTimeout(function() { document.body.removeChild(a); }, 300);
     } catch (err) {
         console.error('Erro ao baixar:', err);
-        alert('❌ Erro ao baixar. Tente novamente.');
+        try {
+            window.open(dataUrl, '_blank');
+        } catch(e2) {
+            alert('Erro ao baixar. Tente pressionar e segurar a mídia para salvar.');
+        }
     }
 };
 
 // ============================================================
-// 📤 COMPARTILHAR - Busca o dado pelo ID no cache global
+// 📤 COMPARTILHAR - Função global que funciona no app E no HTML exportado
 // ============================================================
 window.shareMediaById = async function(mediaId, fileName, mimeType) {
-    const dataUrl = window._reportMediaCache[mediaId];
+    var dataUrl = null;
+    if (window._reportMediaCache && window._reportMediaCache[mediaId]) {
+        dataUrl = window._reportMediaCache[mediaId];
+    }
     if (!dataUrl) {
-        alert('❌ Mídia não encontrada no cache. Tente gerar o relatório novamente.');
+        alert('Mídia não encontrada no relatório. Tente gerar o relatório novamente.');
         return;
     }
     try {
-        const res = await fetch(dataUrl);
-        const blob = await res.blob();
-        const file = new File([blob], fileName, { type: mimeType });
+        var res = await fetch(dataUrl);
+        var blob = await res.blob();
+        var file = new File([blob], fileName, { type: mimeType });
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
@@ -362,11 +370,9 @@ window.shareMediaById = async function(mediaId, fileName, mimeType) {
                 title: fileName,
                 text: '📋 Evidência - Checklist Mecânica Brasil'
             });
-            if (typeof showToast === 'function') showToast('✅ Enviado!');
             return;
         }
 
-        // Fallback: tenta share sem arquivo
         if (navigator.share) {
             try {
                 await navigator.share({
@@ -379,14 +385,11 @@ window.shareMediaById = async function(mediaId, fileName, mimeType) {
             }
         }
 
-        // Último fallback: download
         window.downloadMediaById(mediaId, fileName);
-        if (typeof showToast === 'function') showToast('💾 Baixado. Envie manualmente pelo WhatsApp.');
     } catch (err) {
         if (err.name !== 'AbortError') {
             console.error('Erro ao compartilhar:', err);
             window.downloadMediaById(mediaId, fileName);
-            if (typeof showToast === 'function') showToast('💾 Baixado. Envie manualmente.');
         }
     }
 };
@@ -893,7 +896,6 @@ async function generateReport() {
 
         showToast('📦 Carregando evidências...');
 
-        // Limpa cache anterior
         window._reportMediaCache = {};
 
         const allMediaIds = [];
@@ -906,7 +908,6 @@ async function generateReport() {
             }
         }
 
-        // Carrega todas as mídias no cache global
         for (let i = 0; i < allMediaIds.length; i++) {
             const entry = allMediaIds[i];
             if (!window._reportMediaCache[entry.id]) {
@@ -963,12 +964,10 @@ async function generateReport() {
                 if (itemData.photos.length > 0 || itemData.audios.length > 0 || itemData.videos.length > 0) {
                     reportHTML += '<div class="rp-media-grid">';
 
-                    // FOTOS
                     for (const photoId of itemData.photos) {
                         const dataUrl = window._reportMediaCache[photoId];
                         if (dataUrl) {
                             const fname = 'foto_' + photoId + '.jpg';
-                            // ✅ Usa apenas o ID no onclick - NÃO coloca o data URL inline
                             reportHTML += '<div class="rp-media-card">';
                             reportHTML += '<img src="' + dataUrl + '" class="rp-photo" alt="Foto">';
                             reportHTML += '<div class="rp-media-actions">';
@@ -980,7 +979,6 @@ async function generateReport() {
                         }
                     }
 
-                    // VÍDEOS
                     for (const videoId of itemData.videos) {
                         const dataUrl = window._reportMediaCache[videoId];
                         if (dataUrl) {
@@ -997,7 +995,6 @@ async function generateReport() {
                         }
                     }
 
-                    // ÁUDIOS
                     for (const audioId of itemData.audios) {
                         const dataUrl = window._reportMediaCache[audioId];
                         if (dataUrl) {
@@ -1046,7 +1043,6 @@ async function generateReport() {
         reportHTML += '<div class="rp-footer">Mecânica Brasil © ' + new Date().getFullYear() + '</div>';
         reportHTML += '</div>';
 
-        // Estilos do relatório
         const reportStyle =
             '<style>' +
             '.report-wrap{color:#1e293b;font-size:13px;line-height:1.5}' +
@@ -1168,48 +1164,77 @@ async function shareReportHTML() {
 
 // ============================================================
 // 🔨 Monta HTML completo para download/compartilhamento
-// Inclui as funções de download/share dentro do HTML exportado
+// As mídias são embutidas em um <script type="application/json">
+// separado para evitar problemas de parsing com </script> nos data URLs
 // ============================================================
 function buildFullReportHTML(bodyHTML, dados) {
-    // Monta o objeto de mídias como JSON para embutir no HTML
-    let mediaObjStr = '{}';
+    var mediaJSON = '{}';
     try {
-        mediaObjStr = JSON.stringify(window._reportMediaCache || {});
+        mediaJSON = JSON.stringify(window._reportMediaCache || {});
     } catch(e) {
         console.error('Erro ao serializar cache:', e);
     }
 
-    // Script que será embutido no HTML exportado
-    const embeddedScript =
-        'window._reportMediaCache = ' + mediaObjStr + ';\n' +
-        'function downloadMediaById(mediaId, fileName) {\n' +
-        '  var dataUrl = window._reportMediaCache[mediaId];\n' +
-        '  if (!dataUrl) { alert("Mídia não encontrada."); return; }\n' +
-        '  var a = document.createElement("a");\n' +
-        '  a.href = dataUrl; a.download = fileName;\n' +
-        '  a.style.display = "none";\n' +
-        '  document.body.appendChild(a); a.click();\n' +
-        '  setTimeout(function(){ document.body.removeChild(a); }, 200);\n' +
-        '}\n' +
-        'async function shareMediaById(mediaId, fileName, mimeType) {\n' +
-        '  var dataUrl = window._reportMediaCache[mediaId];\n' +
-        '  if (!dataUrl) { alert("Mídia não encontrada."); return; }\n' +
-        '  try {\n' +
-        '    var res = await fetch(dataUrl);\n' +
-        '    var blob = await res.blob();\n' +
-        '    var file = new File([blob], fileName, { type: mimeType });\n' +
-        '    if (navigator.canShare && navigator.canShare({ files: [file] })) {\n' +
-        '      await navigator.share({ files: [file], title: fileName });\n' +
-        '      return;\n' +
+    // Escapa </script> dentro do JSON para não quebrar o HTML
+    var safeMediaJSON = mediaJSON.replace(/<\//g, '<\\/');
+
+    var embeddedScript =
+        '(function() {\n' +
+        '  var mediaEl = document.getElementById("__mb_media_data__");\n' +
+        '  if (mediaEl) {\n' +
+        '    try {\n' +
+        '      window._reportMediaCache = JSON.parse(mediaEl.textContent);\n' +
+        '    } catch(e) {\n' +
+        '      window._reportMediaCache = {};\n' +
+        '      console.error("Erro ao carregar mídias:", e);\n' +
         '    }\n' +
-        '    downloadMediaById(mediaId, fileName);\n' +
-        '    alert("Arquivo baixado. Envie pelo WhatsApp.");\n' +
-        '  } catch(err) {\n' +
-        '    if (err.name !== "AbortError") {\n' +
-        '      downloadMediaById(mediaId, fileName);\n' +
-        '    }\n' +
+        '  } else {\n' +
+        '    window._reportMediaCache = {};\n' +
         '  }\n' +
-        '}\n';
+        '\n' +
+        '  window.downloadMediaById = function(mediaId, fileName) {\n' +
+        '    var dataUrl = window._reportMediaCache[mediaId];\n' +
+        '    if (!dataUrl) { alert("Mídia não encontrada neste relatório."); return; }\n' +
+        '    try {\n' +
+        '      var a = document.createElement("a");\n' +
+        '      a.href = dataUrl;\n' +
+        '      a.download = fileName;\n' +
+        '      a.style.display = "none";\n' +
+        '      document.body.appendChild(a);\n' +
+        '      a.click();\n' +
+        '      setTimeout(function(){ document.body.removeChild(a); }, 300);\n' +
+        '    } catch(err) {\n' +
+        '      try { window.open(dataUrl, "_blank"); } catch(e2) {\n' +
+        '        alert("Erro ao baixar. Pressione e segure a mídia para salvar.");\n' +
+        '      }\n' +
+        '    }\n' +
+        '  };\n' +
+        '\n' +
+        '  window.shareMediaById = async function(mediaId, fileName, mimeType) {\n' +
+        '    var dataUrl = window._reportMediaCache[mediaId];\n' +
+        '    if (!dataUrl) { alert("Mídia não encontrada neste relatório."); return; }\n' +
+        '    try {\n' +
+        '      var res = await fetch(dataUrl);\n' +
+        '      var blob = await res.blob();\n' +
+        '      var file = new File([blob], fileName, { type: mimeType });\n' +
+        '      if (navigator.canShare && navigator.canShare({ files: [file] })) {\n' +
+        '        await navigator.share({ files: [file], title: fileName, text: "Evidencia - Checklist Mecanica Brasil" });\n' +
+        '        return;\n' +
+        '      }\n' +
+        '      if (navigator.share) {\n' +
+        '        try {\n' +
+        '          await navigator.share({ title: fileName, text: "Evidencia do Checklist" });\n' +
+        '          return;\n' +
+        '        } catch(e) { if (e.name === "AbortError") return; }\n' +
+        '      }\n' +
+        '      window.downloadMediaById(mediaId, fileName);\n' +
+        '    } catch(err) {\n' +
+        '      if (err.name !== "AbortError") {\n' +
+        '        window.downloadMediaById(mediaId, fileName);\n' +
+        '      }\n' +
+        '    }\n' +
+        '  };\n' +
+        '})();\n';
 
     return '<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n' +
         '<meta charset="UTF-8">\n' +
@@ -1217,7 +1242,10 @@ function buildFullReportHTML(bodyHTML, dados) {
         '<title>Checklist - ' + (dados.cliente || 'Cliente') + ' - ' + (dados.placa || 'Placa') + '</title>\n' +
         '</head>\n<body>\n' +
         bodyHTML +
-        '\n<script>\n' +
+        '\n<script type="application/json" id="__mb_media_data__">\n' +
+        safeMediaJSON +
+        '\n</' + 'script>\n' +
+        '<script>\n' +
         embeddedScript +
         '\n</' + 'script>\n</body>\n</html>';
 }
