@@ -269,7 +269,7 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
 
 <div class="modal-overlay" id="obsModal">
     <div class="modal">
-        <h2> Observações</h2>
+        <h2>📝 Observações</h2>
         <textarea id="obsText" placeholder="Digite observações gerais..."></textarea>
         <button class="btn btn-primary" onclick="saveObs()">Salvar</button>
         <button class="btn btn-secondary" onclick="closeModal('obsModal')">Cancelar</button>
@@ -290,7 +290,7 @@ const categories = [
     { id: 'motor', name: 'Motor', icon: '🔧', items: ['Nível do óleo do motor','Estado do óleo','Vazamentos de óleo','Filtro de óleo','Filtro de ar','Filtro de combustível','Filtro de cabine','Correia de acessórios','Correia dentada/corrente','Tensionadores','Coxins do motor','Mangueiras do motor','Velas','Cabos/Bobinas de ignição']},
     { id: 'arrefecimento', name: 'Arrefecimento', icon: '❄️', items: ['Nível do líquido','Concentração do aditivo','Radiador','Tampa do reservatório','Reservatório','Mangueiras','Bomba d\'água','Ventoinha','Válvula termostática']},
     { id: 'freios', name: 'Freios', icon: '🛑', items: ['Pastilhas dianteiras','Pastilhas traseiras','Lonas','Discos','Tambores','Fluido de freio','Mangueiras','Cilindros de roda','Freio de estacionamento']},
-    { id: 'suspensao', name: 'Suspensão', icon: '', items: ['Amortecedores','Molas','Batentes','Coifas','Pivôs','Buchas das bandejas','Bieletas','Barra estabilizadora','Rolamentos']},
+    { id: 'suspensao', name: 'Suspensão', icon: '🔩', items: ['Amortecedores','Molas','Batentes','Coifas','Pivôs','Buchas das bandejas','Bieletas','Barra estabilizadora','Rolamentos']},
     { id: 'direcao', name: 'Direção', icon: '🔄', items: ['Terminais','Axiais','Caixa de direção','Vazamentos','Folgas','Alinhamento']},
     { id: 'transmissao', name: 'Transmissão', icon: '⚡', items: ['Nível do óleo','Vazamentos','Homocinéticas','Coifas','Semi-eixos','Embreagem','ATF','Câmbio CVT/DSG']},
     { id: 'pneus', name: 'Pneus', icon: '🛞', items: ['Calibragem','Desgaste','Rodízio','Estepe','Macaco','Chave de roda']},
@@ -312,8 +312,21 @@ let useIndexedDB = true;
 let db = null;
 let loadedImages = {};
 
-// ============ FUNÇÕES GLOBAIS PARA DOWNLOAD E COMPARTILHAMENTO (acessíveis pelo relatório) ============
-window.downloadMediaFromDataUrl = function(dataUrl, fileName) {
+// ============================================================
+// 🔧 CACHE GLOBAL DE MÍDIAS DO RELATÓRIO
+// Os botões do relatório usam APENAS o ID para buscar aqui
+// ============================================================
+window._reportMediaCache = {};
+
+// ============================================================
+// 📥 DOWNLOAD - Busca o dado pelo ID no cache global
+// ============================================================
+window.downloadMediaById = function(mediaId, fileName) {
+    const dataUrl = window._reportMediaCache[mediaId];
+    if (!dataUrl) {
+        alert('❌ Mídia não encontrada no cache. Tente gerar o relatório novamente.');
+        return;
+    }
     try {
         const a = document.createElement('a');
         a.href = dataUrl;
@@ -321,15 +334,23 @@ window.downloadMediaFromDataUrl = function(dataUrl, fileName) {
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
-        setTimeout(() => { document.body.removeChild(a); }, 100);
-        showToast(' Baixando: ' + fileName);
+        setTimeout(function() { document.body.removeChild(a); }, 200);
+        if (typeof showToast === 'function') showToast('💾 Baixando: ' + fileName);
     } catch (err) {
         console.error('Erro ao baixar:', err);
-        showToast('❌ Erro ao baixar arquivo');
+        alert('❌ Erro ao baixar. Tente novamente.');
     }
 };
 
-window.shareMediaFromReport = async function(dataUrl, fileName, mimeType) {
+// ============================================================
+// 📤 COMPARTILHAR - Busca o dado pelo ID no cache global
+// ============================================================
+window.shareMediaById = async function(mediaId, fileName, mimeType) {
+    const dataUrl = window._reportMediaCache[mediaId];
+    if (!dataUrl) {
+        alert('❌ Mídia não encontrada no cache. Tente gerar o relatório novamente.');
+        return;
+    }
     try {
         const res = await fetch(dataUrl);
         const blob = await res.blob();
@@ -339,25 +360,33 @@ window.shareMediaFromReport = async function(dataUrl, fileName, mimeType) {
             await navigator.share({
                 files: [file],
                 title: fileName,
-                text: '📋 Evidência do Checklist - Mecânica Brasil'
+                text: '📋 Evidência - Checklist Mecânica Brasil'
             });
-            showToast('✅ Enviado com sucesso!');
+            if (typeof showToast === 'function') showToast('✅ Enviado!');
             return;
         }
 
+        // Fallback: tenta share sem arquivo
         if (navigator.share) {
-            showToast('⚠️ Compartilhamento de arquivo não suportado. Baixando...');
-            window.downloadMediaFromDataUrl(dataUrl, fileName);
-            return;
+            try {
+                await navigator.share({
+                    title: fileName,
+                    text: '📋 Evidência do Checklist - Mecânica Brasil'
+                });
+                return;
+            } catch(e) {
+                if (e.name === 'AbortError') return;
+            }
         }
 
-        window.downloadMediaFromDataUrl(dataUrl, fileName);
-        showToast('💾 Arquivo baixado. Envie manualmente pelo WhatsApp.');
+        // Último fallback: download
+        window.downloadMediaById(mediaId, fileName);
+        if (typeof showToast === 'function') showToast('💾 Baixado. Envie manualmente pelo WhatsApp.');
     } catch (err) {
         if (err.name !== 'AbortError') {
             console.error('Erro ao compartilhar:', err);
-            window.downloadMediaFromDataUrl(dataUrl, fileName);
-            showToast('💾 Baixado. Envie manualmente pelo WhatsApp.');
+            window.downloadMediaById(mediaId, fileName);
+            if (typeof showToast === 'function') showToast('💾 Baixado. Envie manualmente.');
         }
     }
 };
@@ -449,16 +478,8 @@ function compressImage(file, maxWidth = 800, quality = 0.6) {
     });
 }
 
-function compressVideo(file, maxSizeMB = 15) {
+function compressVideo(file) {
     return new Promise((resolve) => {
-        if (file.size <= maxSizeMB * 1024 * 1024) {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(file);
-            return;
-        }
-        showToast('️ Vídeo grande (' + Math.round(file.size/(1024*1024)) + 'MB). Processando...');
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target.result);
         reader.onerror = () => resolve(null);
@@ -514,7 +535,7 @@ function renderItem(catId, idx, label) {
         data.videos.forEach((videoId, vIdx) => {
             mediaHTML +=
                 '<div class="media-item" style="background:#000;">' +
-                '<video src="" id="video-' + videoId + '" data-videoid="' + videoId + '" ' +
+                '<video id="video-' + videoId + '" data-videoid="' + videoId + '" ' +
                 'onclick="event.stopPropagation();loadAndPlayVideo(\'' + videoId + '\')" ' +
                 'muted playsinline preload="none" style="width:100%;height:100%;object-fit:cover;cursor:pointer;"></video>' +
                 '<button class="media-remove" onclick="event.stopPropagation();removeVideo(\'' + catId + '\',' + idx + ',' + vIdx + ')">×</button>' +
@@ -526,12 +547,9 @@ function renderItem(catId, idx, label) {
             );
             mediaHTML +=
                 '<div class="media-item">' +
-                '<img src="' + placeholder + '" ' +
-                'id="img-' + photoId + '" ' +
-                'data-photoid="' + photoId + '" ' +
+                '<img src="' + placeholder + '" id="img-' + photoId + '" data-photoid="' + photoId + '" ' +
                 'onclick="event.stopPropagation();loadAndShowPhoto(\'' + photoId + '\')" ' +
-                'onerror="this.onerror=null;this.src=\'' + placeholder + '\'" ' +
-                'loading="lazy">' +
+                'onerror="this.onerror=null;this.src=\'' + placeholder + '\'" loading="lazy">' +
                 '<button class="media-remove" onclick="event.stopPropagation();removePhoto(\'' + catId + '\',' + idx + ',' + pIdx + ')">×</button>' +
                 '</div>';
         });
@@ -599,10 +617,7 @@ async function loadItemImages(catId, idx) {
         const imgEl = document.getElementById('img-' + photoId);
         if (!imgEl) continue;
         if (imgEl.src && imgEl.src.includes('svg+xml')) {
-            try {
-                const dataUrl = await getMediaFromDB(photoId);
-                if (dataUrl) imgEl.src = dataUrl;
-            } catch (e) {}
+            try { const d = await getMediaFromDB(photoId); if (d) imgEl.src = d; } catch (e) {}
         }
     }
 }
@@ -613,13 +628,7 @@ async function loadItemVideos(catId, idx) {
         const videoEl = document.getElementById('video-' + videoId);
         if (!videoEl) continue;
         if (!videoEl.src || videoEl.src === window.location.href) {
-            try {
-                const dataUrl = await getMediaFromDB(videoId);
-                if (dataUrl) {
-                    videoEl.src = dataUrl;
-                    videoEl.load();
-                }
-            } catch (e) {}
+            try { const d = await getMediaFromDB(videoId); if (d) { videoEl.src = d; videoEl.load(); } } catch (e) {}
         }
     }
 }
@@ -633,23 +642,14 @@ async function loadMediaForSection(catId) {
             const imgEl = document.getElementById('img-' + photoId);
             if (!imgEl) continue;
             if (imgEl.src && imgEl.src.includes('svg+xml')) {
-                try {
-                    const dataUrl = await getMediaFromDB(photoId);
-                    if (dataUrl) imgEl.src = dataUrl;
-                } catch (e) {}
+                try { const d = await getMediaFromDB(photoId); if (d) imgEl.src = d; } catch (e) {}
             }
         }
         for (const videoId of data.videos) {
             const videoEl = document.getElementById('video-' + videoId);
             if (!videoEl) continue;
             if (!videoEl.src || videoEl.src === window.location.href) {
-                try {
-                    const dataUrl = await getMediaFromDB(videoId);
-                    if (dataUrl) {
-                        videoEl.src = dataUrl;
-                        videoEl.load();
-                    }
-                } catch (e) {}
+                try { const d = await getMediaFromDB(videoId); if (d) { videoEl.src = d; videoEl.load(); } } catch (e) {}
             }
         }
         if (idx % 3 === 2) await new Promise(r => setTimeout(r, 50));
@@ -716,13 +716,13 @@ async function handleAudioSelected(e) {
             data.audios.push(audioId);
             refreshItem(currentAudioTarget.catId, currentAudioTarget.idx);
             saveData();
-            showToast(' Áudio salvo!');
+            showToast('🎤 Áudio salvo!');
             currentAudioTarget = null;
         };
         reader.onerror = () => { showToast('❌ Erro ao ler áudio'); currentAudioTarget = null; };
         reader.readAsDataURL(file);
     } catch (err) {
-        console.error('Erro ao salvar áudio:', err);
+        console.error('Erro:', err);
         showToast('❌ Erro ao salvar áudio');
         currentAudioTarget = null;
     }
@@ -746,7 +746,7 @@ async function removeAudio(catId, idx, audioIdx) {
     data.audios.splice(audioIdx, 1);
     refreshItem(catId, idx);
     saveData();
-    showToast('️ Áudio removido');
+    showToast('🗑️ Áudio removido');
 }
 
 function capturePhoto(catId, idx) {
@@ -768,10 +768,10 @@ async function handlePhotoSelected(e) {
         data.photos.push(photoId);
         refreshItem(currentPhotoTarget.catId, currentPhotoTarget.idx);
         saveData();
-        showToast(' Foto salva!');
+        showToast('📷 Foto salva!');
         currentPhotoTarget = null;
     } catch (err) {
-        console.error('Erro ao salvar foto:', err);
+        console.error('Erro:', err);
         showToast('❌ Erro ao salvar foto');
         currentPhotoTarget = null;
     }
@@ -794,9 +794,7 @@ async function loadAndShowPhoto(photoId) {
         const win = window.open('', '_blank');
         if (win) {
             win.document.write('<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;}img{max-width:100%;max-height:100vh;}</style></head><body><img src="' + dataUrl + '"></body></html>');
-        } else {
-            showToast('❌ Pop-up bloqueado');
-        }
+        } else { showToast('❌ Pop-up bloqueado'); }
     }
 }
 
@@ -809,23 +807,14 @@ function captureVideo(catId, idx) {
 async function handleVideoSelected(e) {
     const file = e.target.files[0];
     if (!file || !currentVideoTarget) return;
-
     const fileSizeMB = file.size / (1024 * 1024);
     showToast('⏳ Processando vídeo (' + Math.round(fileSizeMB) + 'MB)...');
-
     try {
-        const compressed = await compressVideo(file, 20);
-        if (!compressed) {
-            showToast('❌ Erro ao processar vídeo');
-            currentVideoTarget = null;
-            e.target.value = '';
-            return;
-        }
-
+        const compressed = await compressVideo(file);
+        if (!compressed) { showToast('❌ Erro ao processar vídeo'); currentVideoTarget = null; e.target.value = ''; return; }
         const videoId = 'video-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
         loadedImages[videoId] = compressed;
         await saveMediaToDB(videoId, compressed);
-
         const data = ensureItem(currentVideoTarget.catId, currentVideoTarget.idx);
         data.videos.push(videoId);
         refreshItem(currentVideoTarget.catId, currentVideoTarget.idx);
@@ -833,7 +822,7 @@ async function handleVideoSelected(e) {
         showToast('📹 Vídeo salvo!');
         currentVideoTarget = null;
     } catch (err) {
-        console.error('Erro ao salvar vídeo:', err);
+        console.error('Erro:', err);
         showToast('❌ Erro ao salvar vídeo');
         currentVideoTarget = null;
     }
@@ -846,22 +835,15 @@ async function loadAndPlayVideo(videoId) {
         const win = window.open('', '_blank');
         if (win) {
             win.document.write(
-                '<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;}' +
-                'video{max-width:100%;max-height:100vh;display:block;}</style></head><body>' +
+                '<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;}video{max-width:100%;max-height:100vh;}</style></head><body>' +
                 '<video controls autoplay playsinline src="' + dataUrl + '"></video></body></html>'
             );
         } else {
             const videoEl = document.getElementById('video-' + videoId);
-            if (videoEl && (!videoEl.src || videoEl.src === window.location.href)) {
-                videoEl.src = dataUrl;
-                videoEl.load();
-                videoEl.play();
-            }
+            if (videoEl) { videoEl.src = dataUrl; videoEl.load(); videoEl.play(); }
             showToast('📹 Tocando vídeo');
         }
-    } else {
-        showToast('❌ Vídeo não encontrado');
-    }
+    } else { showToast('❌ Vídeo não encontrado'); }
 }
 
 async function removeVideo(catId, idx, videoIdx) {
@@ -893,7 +875,9 @@ function closeModal(id) {
     document.body.classList.remove('no-scroll');
 }
 
-// ============ RELATÓRIO ============
+// ============================================================
+// 📄 RELATÓRIO
+// ============================================================
 async function generateReport() {
     const btn = document.getElementById('btnReport');
     btn.disabled = true;
@@ -909,29 +893,25 @@ async function generateReport() {
 
         showToast('📦 Carregando evidências...');
 
-        const mediaCache = {};
-        const allMediaIds = [];
+        // Limpa cache anterior
+        window._reportMediaCache = {};
 
+        const allMediaIds = [];
         for (const c of categories) {
             for (let idx = 0; idx < c.items.length; idx++) {
                 const itemData = ensureItem(c.id, idx);
-                for (const photoId of itemData.photos) {
-                    if (!mediaCache[photoId]) allMediaIds.push(photoId);
-                }
-                for (const audioId of itemData.audios) {
-                    if (!mediaCache[audioId]) allMediaIds.push(audioId);
-                }
-                for (const videoId of itemData.videos) {
-                    if (!mediaCache[videoId]) allMediaIds.push(videoId);
-                }
+                for (const id of itemData.photos) allMediaIds.push({ id, type: 'photo' });
+                for (const id of itemData.audios) allMediaIds.push({ id, type: 'audio' });
+                for (const id of itemData.videos) allMediaIds.push({ id, type: 'video' });
             }
         }
 
+        // Carrega todas as mídias no cache global
         for (let i = 0; i < allMediaIds.length; i++) {
-            const id = allMediaIds[i];
-            if (!mediaCache[id]) {
-                const dataUrl = await getMediaFromDB(id);
-                if (dataUrl) mediaCache[id] = dataUrl;
+            const entry = allMediaIds[i];
+            if (!window._reportMediaCache[entry.id]) {
+                const dataUrl = await getMediaFromDB(entry.id);
+                if (dataUrl) window._reportMediaCache[entry.id] = dataUrl;
             }
             if (i % 3 === 2) await new Promise(r => setTimeout(r, 30));
         }
@@ -958,8 +938,7 @@ async function generateReport() {
             for (let idx = 0; idx < c.items.length; idx++) {
                 const itemData = ensureItem(c.id, idx);
                 if (itemData.status || itemData.photos.length > 0 || itemData.audios.length > 0 || itemData.videos.length > 0) {
-                    hasAnyStatus = true;
-                    break;
+                    hasAnyStatus = true; break;
                 }
             }
             if (!hasAnyStatus) continue;
@@ -975,7 +954,7 @@ async function generateReport() {
                 let icon = '';
                 if (itemData.status === 'ok') icon = '✅';
                 else if (itemData.status === 'repair') icon = '🔧';
-                else if (itemData.status === 'critical') icon = '️';
+                else if (itemData.status === 'critical') icon = '⚠️';
 
                 reportHTML += '<div class="rp-item">';
                 reportHTML += '<span class="rp-item-icon">' + icon + '</span>';
@@ -986,18 +965,15 @@ async function generateReport() {
 
                     // FOTOS
                     for (const photoId of itemData.photos) {
-                        const dataUrl = mediaCache[photoId];
+                        const dataUrl = window._reportMediaCache[photoId];
                         if (dataUrl) {
-                            const safeId = photoId.replace(/[^a-zA-Z0-9]/g, '_');
-                            const fname = 'foto_' + safeId + '.jpg';
-                            reportHTML += '<div style="position:relative;">';
-                            reportHTML += '<img src="' + dataUrl + '" class="rp-photo" alt="Foto - ' + item + '" ' +
-                                'id="rp-photo-' + safeId + '" ' +
-                                'onclick="this.requestFullscreen?this.requestFullscreen():window.open(this.src)" ' +
-                                'onerror="this.onerror=null;this.style.display=\'none\'">';
+                            const fname = 'foto_' + photoId + '.jpg';
+                            // ✅ Usa apenas o ID no onclick - NÃO coloca o data URL inline
+                            reportHTML += '<div class="rp-media-card">';
+                            reportHTML += '<img src="' + dataUrl + '" class="rp-photo" alt="Foto">';
                             reportHTML += '<div class="rp-media-actions">';
-                            reportHTML += '<button class="rp-action-btn rp-btn-download" onclick="event.stopPropagation();window.downloadMediaFromDataUrl(\'' + dataUrl + '\',\'' + fname + '\')">💾 Baixar</button>';
-                            reportHTML += '<button class="rp-action-btn rp-btn-whatsapp" onclick="event.stopPropagation();window.shareMediaFromReport(\'' + dataUrl + '\',\'' + fname + '\',\'image/jpeg\')"> Enviar</button>';
+                            reportHTML += '<button class="rp-action-btn rp-btn-download" onclick="window.downloadMediaById(\'' + photoId + '\',\'' + fname + '\')">💾 Baixar</button>';
+                            reportHTML += '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaById(\'' + photoId + '\',\'' + fname + '\',\'image/jpeg\')">📤 Enviar</button>';
                             reportHTML += '</div>';
                             reportHTML += '</div>';
                             totalPhotos++;
@@ -1006,16 +982,15 @@ async function generateReport() {
 
                     // VÍDEOS
                     for (const videoId of itemData.videos) {
-                        const dataUrl = mediaCache[videoId];
+                        const dataUrl = window._reportMediaCache[videoId];
                         if (dataUrl) {
-                            const safeId = videoId.replace(/[^a-zA-Z0-9]/g, '_');
-                            const fname = 'video_' + safeId + '.mp4';
+                            const fname = 'video_' + videoId + '.mp4';
                             reportHTML += '<div class="rp-video-wrap">';
                             reportHTML += '<div class="rp-video-label">📹 Vídeo - ' + item + '</div>';
                             reportHTML += '<video class="rp-video" controls preload="metadata" src="' + dataUrl + '"></video>';
                             reportHTML += '<div class="rp-media-actions">';
-                            reportHTML += '<button class="rp-action-btn rp-btn-download" onclick="window.downloadMediaFromDataUrl(\'' + dataUrl + '\',\'' + fname + '\')">💾 Baixar</button>';
-                            reportHTML += '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaFromReport(\'' + dataUrl + '\',\'' + fname + '\',\'video/mp4\')"> Enviar</button>';
+                            reportHTML += '<button class="rp-action-btn rp-btn-download" onclick="window.downloadMediaById(\'' + videoId + '\',\'' + fname + '\')">💾 Baixar</button>';
+                            reportHTML += '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaById(\'' + videoId + '\',\'' + fname + '\',\'video/mp4\')">📤 Enviar</button>';
                             reportHTML += '</div>';
                             reportHTML += '</div>';
                             totalVideos++;
@@ -1024,10 +999,9 @@ async function generateReport() {
 
                     // ÁUDIOS
                     for (const audioId of itemData.audios) {
-                        const dataUrl = mediaCache[audioId];
+                        const dataUrl = window._reportMediaCache[audioId];
                         if (dataUrl) {
-                            const safeId = audioId.replace(/[^a-zA-Z0-9]/g, '_');
-                            const fname = 'audio_' + safeId + '.webm';
+                            const fname = 'audio_' + audioId + '.webm';
                             reportHTML +=
                                 '<div class="rp-audio-wrap">' +
                                     '<div class="rp-audio-icon">🎤</div>' +
@@ -1035,8 +1009,8 @@ async function generateReport() {
                                         '<div class="rp-audio-label">Áudio - ' + item + '</div>' +
                                         '<audio controls preload="metadata" src="' + dataUrl + '"></audio>' +
                                         '<div class="rp-media-actions" style="margin-top:6px;">' +
-                                            '<button class="rp-action-btn rp-btn-download" onclick="window.downloadMediaFromDataUrl(\'' + dataUrl + '\',\'' + fname + '\')">💾 Baixar</button>' +
-                                            '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaFromReport(\'' + dataUrl + '\',\'' + fname + '\',\'audio/webm\')"> Enviar</button>' +
+                                            '<button class="rp-action-btn rp-btn-download" onclick="window.downloadMediaById(\'' + audioId + '\',\'' + fname + '\')">💾 Baixar</button>' +
+                                            '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaById(\'' + audioId + '\',\'' + fname + '\',\'audio/webm\')">📤 Enviar</button>' +
                                         '</div>' +
                                     '</div>' +
                                 '</div>';
@@ -1056,15 +1030,15 @@ async function generateReport() {
         reportHTML +=
             '<div class="rp-info">' +
                 '<div class="rp-info-row"><span>Classificação</span><span>' + classLabel + '</span></div>' +
-                '<div class="rp-info-row"><span>📷 Fotos no relatório</span><span>' + totalPhotos + '</span></div>' +
-                '<div class="rp-info-row"><span>📹 Vídeos no relatório</span><span>' + totalVideos + '</span></div>' +
-                '<div class="rp-info-row"><span>🎤 Áudios no relatório</span><span>' + totalAudios + '</span></div>' +
+                '<div class="rp-info-row"><span>📷 Fotos</span><span>' + totalPhotos + '</span></div>' +
+                '<div class="rp-info-row"><span>📹 Vídeos</span><span>' + totalVideos + '</span></div>' +
+                '<div class="rp-info-row"><span>🎤 Áudios</span><span>' + totalAudios + '</span></div>' +
             '</div>';
 
         if (generalObs) {
             reportHTML +=
                 '<div class="rp-info">' +
-                    '<div style="font-weight:600;margin-bottom:6px;color:#f59e0b;"> Observações Gerais:</div>' +
+                    '<div style="font-weight:600;margin-bottom:6px;color:#f59e0b;">📝 Observações Gerais:</div>' +
                     '<p style="padding:4px 0;white-space:pre-wrap;">' + generalObs + '</p>' +
                 '</div>';
         }
@@ -1072,21 +1046,54 @@ async function generateReport() {
         reportHTML += '<div class="rp-footer">Mecânica Brasil © ' + new Date().getFullYear() + '</div>';
         reportHTML += '</div>';
 
+        // Estilos do relatório
+        const reportStyle =
+            '<style>' +
+            '.report-wrap{color:#1e293b;font-size:13px;line-height:1.5}' +
+            '.rp-header{text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #e11d48}' +
+            '.rp-header h2{font-size:18px;color:#0f172a;margin-bottom:4px}' +
+            '.rp-header p{color:#64748b;font-size:12px}' +
+            '.rp-info{background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid #e2e8f0}' +
+            '.rp-info-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e2e8f0}' +
+            '.rp-info-row:last-child{border:none}' +
+            '.rp-info-row span:first-child{color:#64748b}' +
+            '.rp-info-row span:last-child{font-weight:600;color:#0f172a}' +
+            '.rp-category{margin-bottom:20px;page-break-inside:avoid}' +
+            '.rp-category h3{font-size:15px;color:#e11d48;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}' +
+            '.rp-item{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;align-items:center}' +
+            '.rp-item-icon{font-size:14px;flex-shrink:0}' +
+            '.rp-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:10px 0 10px 22px;padding:12px;background:#f8fafc;border-radius:8px;border-left:3px solid #e11d48}' +
+            '.rp-media-card{position:relative}' +
+            '.rp-photo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer;display:block}' +
+            '.rp-video-wrap{grid-column:1/-1;background:#fef2f2;border-radius:8px;padding:12px;border:1px solid #fecaca}' +
+            '.rp-video-label{font-size:12px;color:#dc2626;margin-bottom:6px;font-weight:600}' +
+            '.rp-video{width:100%;max-height:300px;border-radius:6px;border:1px solid #cbd5e1;background:#000}' +
+            '.rp-audio-wrap{grid-column:1/-1;background:#eff6ff;border-radius:8px;padding:12px;display:flex;align-items:flex-start;gap:12px;border:1px solid #bfdbfe}' +
+            '.rp-audio-icon{width:42px;height:42px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:#fff}' +
+            '.rp-audio-label{font-size:11px;color:#64748b;margin-bottom:3px}' +
+            '.rp-audio-wrap audio{width:100%;height:34px}' +
+            '.rp-media-actions{display:flex;gap:4px;margin-top:6px}' +
+            '.rp-action-btn{flex:1;padding:8px 6px;border-radius:6px;border:none;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;transition:all .2s;-webkit-appearance:none;touch-action:manipulation}' +
+            '.rp-action-btn:active{transform:scale(.95);opacity:.8}' +
+            '.rp-btn-download{background:#475569;color:#fff}' +
+            '.rp-btn-whatsapp{background:#25D366;color:#fff}' +
+            '.rp-footer{text-align:center;color:#94a3b8;font-size:10px;margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0}' +
+            '</style>';
+
         const actionsHTML =
-            '<div class="report-actions">' +
+            '<div style="margin-top:16px;">' +
                 '<button class="btn btn-primary" onclick="printReport()" style="width:100%;margin-top:8px;">🖨️ Imprimir / Salvar PDF</button>' +
                 '<button class="btn btn-secondary" onclick="shareReportHTML()" style="width:100%;margin-top:6px;">📤 Compartilhar Arquivo Completo</button>' +
                 '<button class="btn btn-secondary" onclick="downloadReportHTML()" style="width:100%;margin-top:6px;">💾 Baixar Relatório (.html)</button>' +
                 '<button class="btn btn-secondary" onclick="closeModal(\'reportModal\')" style="width:100%;margin-top:6px;">Fechar</button>' +
             '</div>';
 
-        document.getElementById('reportContent').innerHTML = reportHTML + actionsHTML;
+        document.getElementById('reportContent').innerHTML = reportStyle + reportHTML + actionsHTML;
         document.getElementById('reportModal').classList.add('show');
         document.body.classList.add('no-scroll');
 
-        window._reportMediaCache = mediaCache;
         window._reportData = { cliente, veiculo, placa, km, data, hora, totalPhotos, totalVideos, totalAudios };
-        window._reportHTMLBody = reportHTML;
+        window._reportHTMLBody = reportStyle + reportHTML;
 
         showToast('✅ Relatório gerado!');
     } catch (err) {
@@ -1102,7 +1109,6 @@ function printReport() {
     const htmlBody = window._reportHTMLBody;
     const dados = window._reportData;
     if (!htmlBody) return;
-
     const fullHTML = buildFullReportHTML(htmlBody, dados);
     const win = window.open('', '_blank');
     if (!win) { showToast('❌ Pop-up bloqueado'); return; }
@@ -1115,7 +1121,6 @@ function downloadReportHTML() {
     const htmlBody = window._reportHTMLBody;
     const dados = window._reportData;
     if (!htmlBody) { showToast('❌ Gere o relatório primeiro'); return; }
-
     const fullHTML = buildFullReportHTML(htmlBody, dados);
     const fileName = 'checklist_' + (dados.cliente || 'cliente').replace(/\s+/g, '_') + '_' + (dados.placa || 'placa').replace(/\s+/g, '_') + '_' + new Date().toISOString().split('T')[0] + '.html';
     const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
@@ -1126,18 +1131,14 @@ function downloadReportHTML() {
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }, 200);
-    showToast('💾 Relatório baixado: ' + fileName);
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+    showToast('💾 Relatório baixado!');
 }
 
 async function shareReportHTML() {
     const htmlBody = window._reportHTMLBody;
     const dados = window._reportData;
     if (!htmlBody) { showToast('❌ Gere o relatório primeiro'); return; }
-
     try {
         showToast('📦 Preparando arquivo...');
         const fullHTML = buildFullReportHTML(htmlBody, dados);
@@ -1148,46 +1149,65 @@ async function shareReportHTML() {
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
                 title: 'Checklist ' + dados.cliente + ' - ' + dados.placa,
-                text: '📋 Relatório de checklist com ' + dados.totalPhotos + ' foto(s), ' + dados.totalVideos + ' vídeo(s) e ' + dados.totalAudios + ' áudio(s)',
+                text: '📋 Relatório com ' + dados.totalPhotos + ' foto(s), ' + dados.totalVideos + ' vídeo(s) e ' + dados.totalAudios + ' áudio(s)',
                 files: [file]
             });
             showToast('✅ Compartilhado!');
             return;
         }
-
-        if (navigator.share) {
-            downloadReportHTML();
-            showToast('⚠️ Arquivo baixado. Compartilhe manualmente!');
-            return;
-        }
-
         downloadReportHTML();
-        showToast('💾 Relatório baixado!');
+        showToast('💾 Relatório baixado! Compartilhe manualmente.');
     } catch (err) {
         if (err.name !== 'AbortError') {
-            console.error('Erro ao compartilhar:', err);
+            console.error('Erro:', err);
             downloadReportHTML();
-            showToast('❌ Não foi possível compartilhar. Arquivo baixado.');
+            showToast('💾 Relatório baixado!');
         }
     }
 }
 
+// ============================================================
+// 🔨 Monta HTML completo para download/compartilhamento
+// Inclui as funções de download/share dentro do HTML exportado
+// ============================================================
 function buildFullReportHTML(bodyHTML, dados) {
-    const shareScript =
-        'function downloadMediaFromDataUrl(dataUrl, fileName){var a=document.createElement("a");a.href=dataUrl;a.download=fileName;a.style.display="none";document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a)},100);}\n' +
-        'async function shareMediaFromReport(dataUrl, fileName, mimeType){\n' +
-        '  try{\n' +
-        '    var res=await fetch(dataUrl);var blob=await res.blob();\n' +
-        '    var file=new File([blob],fileName,{type:mimeType});\n' +
-        '    if(navigator.canShare&&navigator.canShare({files:[file]})){\n' +
-        '      await navigator.share({files:[file],title:fileName,text:"📋 Evidência do Checklist - Mecânica Brasil"});\n' +
+    // Monta o objeto de mídias como JSON para embutir no HTML
+    let mediaObjStr = '{}';
+    try {
+        mediaObjStr = JSON.stringify(window._reportMediaCache || {});
+    } catch(e) {
+        console.error('Erro ao serializar cache:', e);
+    }
+
+    // Script que será embutido no HTML exportado
+    const embeddedScript =
+        'window._reportMediaCache = ' + mediaObjStr + ';\n' +
+        'function downloadMediaById(mediaId, fileName) {\n' +
+        '  var dataUrl = window._reportMediaCache[mediaId];\n' +
+        '  if (!dataUrl) { alert("Mídia não encontrada."); return; }\n' +
+        '  var a = document.createElement("a");\n' +
+        '  a.href = dataUrl; a.download = fileName;\n' +
+        '  a.style.display = "none";\n' +
+        '  document.body.appendChild(a); a.click();\n' +
+        '  setTimeout(function(){ document.body.removeChild(a); }, 200);\n' +
+        '}\n' +
+        'async function shareMediaById(mediaId, fileName, mimeType) {\n' +
+        '  var dataUrl = window._reportMediaCache[mediaId];\n' +
+        '  if (!dataUrl) { alert("Mídia não encontrada."); return; }\n' +
+        '  try {\n' +
+        '    var res = await fetch(dataUrl);\n' +
+        '    var blob = await res.blob();\n' +
+        '    var file = new File([blob], fileName, { type: mimeType });\n' +
+        '    if (navigator.canShare && navigator.canShare({ files: [file] })) {\n' +
+        '      await navigator.share({ files: [file], title: fileName });\n' +
         '      return;\n' +
         '    }\n' +
-        '    if(navigator.share){alert("⚠️ Seu navegador não suporta envio de arquivo. O arquivo será baixado.");downloadMediaFromDataUrl(dataUrl,fileName);return;}\n' +
-        '    downloadMediaFromDataUrl(dataUrl,fileName);\n' +
-        '    alert("💾 Arquivo baixado. Envie manualmente pelo WhatsApp.");\n' +
-        '  }catch(err){\n' +
-        '    if(err.name!=="AbortError"){downloadMediaFromDataUrl(dataUrl,fileName);alert("💾 Baixado. Envie manualmente.");}\n' +
+        '    downloadMediaById(mediaId, fileName);\n' +
+        '    alert("Arquivo baixado. Envie pelo WhatsApp.");\n' +
+        '  } catch(err) {\n' +
+        '    if (err.name !== "AbortError") {\n' +
+        '      downloadMediaById(mediaId, fileName);\n' +
+        '    }\n' +
         '  }\n' +
         '}\n';
 
@@ -1195,48 +1215,11 @@ function buildFullReportHTML(bodyHTML, dados) {
         '<meta charset="UTF-8">\n' +
         '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
         '<title>Checklist - ' + (dados.cliente || 'Cliente') + ' - ' + (dados.placa || 'Placa') + '</title>\n' +
-        '<style>\n' +
-        '*{margin:0;padding:0;box-sizing:border-box}\n' +
-        'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:20px;color:#1e293b;font-size:13px;line-height:1.6;background:#fff;max-width:900px;margin:0 auto}\n' +
-        '.report-wrap{color:#1e293b}\n' +
-        '.rp-header{text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #e11d48}\n' +
-        '.rp-header h2{font-size:20px;color:#0f172a;margin-bottom:4px}\n' +
-        '.rp-header p{color:#64748b;font-size:12px}\n' +
-        '.rp-info{background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid #e2e8f0}\n' +
-        '.rp-info-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e2e8f0}\n' +
-        '.rp-info-row:last-child{border:none}\n' +
-        '.rp-info-row span:first-child{color:#64748b}\n' +
-        '.rp-info-row span:last-child{font-weight:600;color:#0f172a}\n' +
-        '.rp-category{margin-bottom:20px;page-break-inside:avoid}\n' +
-        '.rp-category h3{font-size:15px;color:#e11d48;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}\n' +
-        '.rp-item{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;align-items:center}\n' +
-        '.rp-item-icon{font-size:14px;flex-shrink:0}\n' +
-        '.rp-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:10px 0 10px 22px;padding:12px;background:#f8fafc;border-radius:8px;border-left:3px solid #e11d48}\n' +
-        '.rp-photo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer;display:block;transition:transform .2s}\n' +
-        '.rp-photo:hover{transform:scale(1.02)}\n' +
-        '.rp-video-wrap{grid-column:1/-1;background:#fef2f2;border-radius:8px;padding:12px;border:1px solid #fecaca}\n' +
-        '.rp-video-label{font-size:12px;color:#dc2626;margin-bottom:6px;font-weight:600}\n' +
-        '.rp-video{width:100%;max-height:350px;border-radius:6px;border:1px solid #cbd5e1;background:#000}\n' +
-        '.rp-audio-wrap{grid-column:1/-1;background:#eff6ff;border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;border:1px solid #bfdbfe}\n' +
-        '.rp-audio-icon{width:42px;height:42px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:#fff}\n' +
-        '.rp-audio-label{font-size:11px;color:#64748b;margin-bottom:3px}\n' +
-        '.rp-audio-wrap audio{width:100%;height:34px}\n' +
-        '.rp-media-actions{display:flex;gap:4px;margin-top:4px}\n' +
-        '.rp-action-btn{flex:1;padding:7px 8px;border-radius:6px;border:none;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;text-decoration:none}\n' +
-        '.rp-action-btn:active{transform:scale(.96)}\n' +
-        '.rp-btn-download{background:#475569;color:#fff}\n' +
-        '.rp-btn-download:hover{background:#64748b}\n' +
-        '.rp-btn-whatsapp{background:#25D366;color:#fff}\n' +
-        '.rp-btn-whatsapp:hover{background:#1da851}\n' +
-        '.rp-footer{text-align:center;color:#94a3b8;font-size:10px;margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0}\n' +
-        '@media print{body{padding:10mm}.rp-category{page-break-inside:avoid}}\n' +
-        '@page{margin:15mm}\n' +
-        '</style>\n</head>\n<body>\n' +
+        '</head>\n<body>\n' +
         bodyHTML +
         '\n<script>\n' +
-        shareScript +
-        'document.querySelectorAll(".rp-photo").forEach(function(img){img.addEventListener("click",function(){if(this.requestFullscreen){this.requestFullscreen()}else{var w=window.open("","_blank");if(w){w.document.write(\'<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh}img{max-width:100%;max-height:100vh}</style></head><body><img src="\'+this.src+\'"></body></html>\')}}}});\n' +
-        '</' + 'script>\n</body>\n</html>';
+        embeddedScript +
+        '\n</' + 'script>\n</body>\n</html>';
 }
 
 // ============ PERSISTÊNCIA ============
@@ -1266,7 +1249,7 @@ async function loadData() {
             });
         }
     } catch (e) {
-        console.error('Erro ao carregar dados:', e);
+        console.error('Erro:', e);
         checklistData = {};
         generalClassification = '';
         generalObs = '';
@@ -1274,9 +1257,10 @@ async function loadData() {
 }
 
 function resetAllData() {
-    if (!confirm('️ Isso apagará TODOS os dados do checklist (fotos, vídeos, áudios, preenchimentos). Continuar?')) return;
+    if (!confirm('⚠️ Isso apagará TODOS os dados. Continuar?')) return;
     showToast('🔄 Limpando dados...');
     loadedImages = {};
+    window._reportMediaCache = {};
     try {
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
@@ -1293,53 +1277,39 @@ function resetAllData() {
     try {
         if (window.indexedDB) {
             const delReq = indexedDB.deleteDatabase('MBChecklistDB');
-            let dbDeleted = false;
-            delReq.onsuccess = () => { if (!dbDeleted) { dbDeleted = true; doReload(); } };
-            delReq.onerror = () => { if (!dbDeleted) { dbDeleted = true; doReload(); } };
-            delReq.onblocked = () => { if (!dbDeleted) { dbDeleted = true; doReload(); } };
-            setTimeout(() => { if (!dbDeleted) { dbDeleted = true; doReload(); } }, 2000);
-        } else { doReload(); }
-    } catch(e) { doReload(); }
-    function doReload() { location.reload(); }
+            let done = false;
+            delReq.onsuccess = () => { if (!done) { done = true; location.reload(); } };
+            delReq.onerror = () => { if (!done) { done = true; location.reload(); } };
+            delReq.onblocked = () => { if (!done) { done = true; location.reload(); } };
+            setTimeout(() => { if (!done) { done = true; location.reload(); } }, 2000);
+        } else { location.reload(); }
+    } catch(e) { location.reload(); }
 }
 
 // ============ INICIALIZAÇÃO ============
 async function init() {
     try { await openDB(); } catch (e) { useIndexedDB = false; }
-    try { await loadData(); } catch (e) { checklistData = {}; generalClassification = ''; generalObs = ''; }
+    try { await loadData(); } catch (e) { checklistData = {}; }
     try {
         renderTabs();
         renderAllSections();
         updateProgress();
         switchTab(categories[0].id);
     } catch (e) {
-        console.error('Erro crítico ao renderizar:', e);
-        try {
-            renderTabs();
-            renderAllSections();
-            updateProgress();
-            switchTab(categories[0].id);
-            showToast('⚠️ App carregado com limitações');
-        } catch (e2) {
-            document.getElementById('content').innerHTML =
-                '<div style="text-align:center;padding:40px 20px;">' +
-                    '<div style="font-size:50px;margin-bottom:16px;">️</div>' +
-                    '<div style="color:#f59e0b;font-weight:700;margin-bottom:8px;">Erro ao carregar o app</div>' +
-                    '<div style="color:#94a3b8;margin-bottom:20px;font-size:14px;">Provavelmente há dados corrompidos</div>' +
-                    '<button class="btn btn-primary" onclick="resetAllData()" style="width:auto;display:inline-block;padding:12px 28px;font-size:14px;">🔄 Limpar Dados e Reiniciar</button>' +
-                '</div>';
-            return;
-        }
+        console.error('Erro:', e);
+        document.getElementById('content').innerHTML =
+            '<div style="text-align:center;padding:40px 20px;">' +
+                '<div style="font-size:50px;margin-bottom:16px;">⚠️</div>' +
+                '<div style="color:#f59e0b;font-weight:700;margin-bottom:8px;">Erro ao carregar</div>' +
+                '<button class="btn btn-primary" onclick="resetAllData()" style="width:auto;display:inline-block;padding:12px 28px;">🔄 Limpar e Reiniciar</button>' +
+            '</div>';
+        return;
     }
     try {
-        document.getElementById('cliente').value = localStorage.getItem('mb_cliente') || '';
-        document.getElementById('veiculo').value = localStorage.getItem('mb_veiculo') || '';
-        document.getElementById('placa').value = localStorage.getItem('mb_placa') || '';
-        document.getElementById('km').value = localStorage.getItem('mb_km') || '';
         ['cliente', 'veiculo', 'placa', 'km'].forEach(id => {
-            document.getElementById(id).addEventListener('input', function() {
-                localStorage.setItem('mb_' + id, document.getElementById(id).value);
-            });
+            const el = document.getElementById(id);
+            el.value = localStorage.getItem('mb_' + id) || '';
+            el.addEventListener('input', function() { localStorage.setItem('mb_' + id, el.value); });
         });
     } catch (e) {}
     try {
