@@ -536,22 +536,43 @@
     return null;
   }
 
-  // Corrigido: aceita "NOME // DOC" ou "NOME // [qualquer coisa] // DOC"
+  // ===== EXTRAÇÃO DO NOME DO CLIENTE (CORRIGIDA) =====
+  // Suporta: "NOME // CNPJ" e "NOME // [FILIAL] // CNPJ" (com qualquer conteúdo/espaço entre as barras)
   function extractClientName(text) {
-    const mainRegex = new RegExp(
-      `([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ\\s]{4,80}?)\\s*\\/\\/\\s*(?:\\[[^\\]]*\\]\\s*\\/\\/\\s*)?${DOC_SRC}`
+    if (!text) return null;
+
+    // Padrão principal: NOME + "//" + qualquer bloco até encontrar o CPF/CNPJ
+    const nameSegmentRegex = new RegExp(
+      `([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9\\.\\-\\s]{2,100}?)\\s*\\/\\/[\\s\\S]{0,150}?${DOC_SRC}`
     );
-    let m = text.match(mainRegex);
+    let m = text.match(nameSegmentRegex);
     if (m && m[1]) return cleanName(m[1]);
 
-    m = text.match(/Cliente\s*[:\-]?\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ\s]{4,80})/i);
+    // Fallback: rótulo explícito "Cliente:"
+    m = text.match(/Cliente\s*[:\-]?\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9\.\-\s]{4,100})/i);
     if (m && m[1]) return cleanName(m[1]);
+
+    // Fallback: primeira linha em CAIXA ALTA sem CPF/CNPJ na própria linha
+    const linhas = text.split('\n').map(l => l.trim()).filter(Boolean);
+    for (const linha of linhas) {
+      if (/^[A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9\.\-\s]{5,100}$/.test(linha) && !/\d{2}\.\d{3}\.\d{3}/.test(linha)) {
+        return cleanName(linha);
+      }
+    }
     return null;
   }
 
   function cleanName(name) {
-    return name.replace(/\[\]/g, '').replace(/\s+/g, ' ').trim()
-      .split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    if (!name) return null;
+    let nome = name
+      .replace(/\[\]/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .replace(/\/\/+$/, '')
+      .replace(/\[\s*\]$/, '')
+      .trim();
+    nome = nome.replace(/[\.\-\s]+$/, (m) => (m.includes('.') ? '.' : ''));
+    if (!nome) return null;
+    return nome.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
   }
 
   function isCompanyPhone(phone) {
@@ -1041,7 +1062,6 @@ Aproveite muito!`;
   });
 
   async function confirmDelete() {
-    // Bloqueia execuções simultâneas / cliques duplicados
     if (isDeleting) return;
     if (!voucherToDelete) return;
 
@@ -1049,7 +1069,6 @@ Aproveite muito!`;
     const deletedBy = document.getElementById('deletedBy').value.trim() || 'Não informado';
     if (reason.length < 30) { alert('A justificativa deve ter no mínimo 30 caracteres.'); return; }
 
-    // Confirma que o voucher ainda existe na base local antes de prosseguir
     const stillExists = vouchers.some(v => v.voucherId === voucherToDelete.voucherId);
     if (!stillExists) {
       alert('Este voucher já foi excluído anteriormente.');
