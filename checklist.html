@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="MB Checklist.html">
+<meta name="apple-mobile-web-app-title" content="MB Checklist">
 <meta name="theme-color" content="#0f172a">
 <meta name="format-detection" content="telephone=no">
 <title>MB Checklist</title>
@@ -164,6 +164,7 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
 .btn:active { transform: scale(.96); }
 .btn-secondary { background: #334155; color: #fff; }
 .btn-primary { background: #e11d48; color: #fff; }
+.btn-whatsapp { background: #25D366; color: #fff; }
 .btn:disabled { opacity: .5; pointer-events: none; }
 
 .modal-overlay {
@@ -187,20 +188,61 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
 .modal textarea:focus { border-color: #e11d48; }
 .modal .btn { margin-top: 8px; width: 100%; }
 
-.toast {
-    position: fixed; top: calc(16px + env(safe-area-inset-top));
-    left: 50%; transform: translateX(-50%);
-    background: #10b981; color: #fff; padding: 10px 22px;
-    border-radius: 30px; font-weight: 700; font-size: 13px;
-    z-index: 200; display: none; pointer-events: none;
-    box-shadow: 0 8px 24px rgba(0,0,0,.4);
-    max-width: 90%; text-align: center;
+/* ========== ESTILOS DO RELATÓRIO NO MODAL ========== */
+.report-wrap { color: #e2e8f0; font-size: 13px; }
+.report-wrap .rp-header {
+    text-align: center; margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 3px solid #e11d48;
 }
-.toast.show { display: block; animation: toastIn .3s; }
-@keyframes toastIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+.report-wrap .rp-header h2 { font-size: 18px; margin-bottom: 2px; font-weight: 800; }
+.report-wrap .rp-header p { color: #94a3b8; font-size: 11px; }
+.report-wrap .rp-info {
+    background: #0f172a; border-radius: 10px; padding: 12px; margin-bottom: 14px;
 }
+.report-wrap .rp-info-row {
+    display: flex; justify-content: space-between; padding: 5px 0;
+    border-bottom: 1px solid #1e293b;
+}
+.report-wrap .rp-info-row:last-child { border: none; }
+.report-wrap .rp-info-row span:first-child { color: #94a3b8; }
+.report-wrap .rp-info-row span:last-child { font-weight: 600; }
+.report-wrap .rp-category { margin-bottom: 16px; }
+.report-wrap .rp-category h3 {
+    font-size: 14px; color: #e11d48; margin-bottom: 6px;
+    border-bottom: 1px solid #334155; padding-bottom: 4px;
+}
+.report-wrap .rp-item {
+    display: flex; gap: 6px; padding: 4px 0; border-bottom: 1px solid #1e293b; align-items: center;
+}
+.report-wrap .rp-item-icon { font-size: 14px; flex-shrink: 0; }
+.report-wrap .rp-media-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+    margin: 8px 0 8px 20px; padding: 10px;
+    background: #0f172a; border-radius: 8px; border-left: 3px solid #e11d48;
+}
+.report-wrap .rp-photo {
+    width: 100%; aspect-ratio: 1; object-fit: cover;
+    border-radius: 6px; border: 1px solid #334155; cursor: pointer; display: block;
+}
+.report-wrap .rp-audio-wrap {
+    grid-column: 1 / -1; background: #0a1929; border-radius: 8px;
+    padding: 10px; display: flex; align-items: center; gap: 10px;
+    border: 1px solid #1e40af;
+}
+.report-wrap .rp-audio-icon {
+    width: 36px; height: 36px; background: #3b82f6; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+}
+.report-wrap .rp-audio-label { font-size: 11px; color: #94a3b8; margin-bottom: 2px; }
+.report-wrap .rp-audio-wrap audio { flex: 1; min-width: 0; height: 30px; }
+.report-wrap .rp-footer {
+    text-align: center; color: #475569; font-size: 10px; margin-top: 16px; padding-top: 10px;
+    border-top: 1px solid #1e293b;
+}
+
+/* Actions dentro do modal */
+.report-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
+.report-actions .btn { width: 100%; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; }
 
 .classification-section { margin-top: 14px; padding: 14px; background: #1e293b; border-radius: 12px; }
 .classification-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
@@ -216,10 +258,26 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
 .class-btn.active-yellow { background: #f59e0b; border-color: #f59e0b; color: #000; }
 .class-btn.active-red { background: #ef4444; border-color: #ef4444; color: #fff; }
 
+.toast {
+    position: fixed; top: calc(16px + env(safe-area-inset-top));
+    left: 50%; transform: translateX(-50%);
+    background: #10b981; color: #fff; padding: 10px 22px;
+    border-radius: 30px; font-weight: 700; font-size: 13px;
+    z-index: 200; display: none; pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    max-width: 90%; text-align: center;
+}
+.toast.show { display: block; animation: toastIn .3s; }
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 @media(min-width: 768px) {
     .info-grid { grid-template-columns: repeat(4, 1fr); }
     .content { max-width: 700px; margin: 0 auto; }
     .bottom-bar { max-width: 700px; left: 50%; transform: translateX(-50%); }
+    .report-wrap .rp-media-grid { grid-template-columns: repeat(3, 1fr); }
 }
 </style>
 </head>
@@ -278,7 +336,6 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
     <div class="modal" id="reportContent"></div>
 </div>
 
-<!-- ⚠️ CORREÇÃO: removido capture do input de áudio para compatibilidade iOS -->
 <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
 <input type="file" id="audioInput" accept="audio/*" style="display:none">
 
@@ -307,50 +364,31 @@ let currentPhotoTarget = null;
 let currentAudioTarget = null;
 let useIndexedDB = true;
 let db = null;
-let loadedImages = {}; // ⚠️ Cache de imagens já carregadas para evitar recarregar
+let loadedImages = {};
 
 // ============ ARMAZENAMENTO COM FALLBACK ============
 function openDB() {
     return new Promise((resolve) => {
         try {
-            if (!window.indexedDB) {
-                useIndexedDB = false;
-                resolve(null);
-                return;
-            }
+            if (!window.indexedDB) { useIndexedDB = false; resolve(null); return; }
             const request = indexedDB.open('MBChecklistDB', 1);
             let resolved = false;
-            
-            request.onerror = () => {
-                if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); }
-            };
-            request.onblocked = () => {
-                if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); }
-            };
-            request.onsuccess = () => {
-                if (!resolved) { resolved = true; db = request.result; resolve(db); }
-            };
+            request.onerror = () => { if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); } };
+            request.onblocked = () => { if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); } };
+            request.onsuccess = () => { if (!resolved) { resolved = true; db = request.result; resolve(db); } };
             request.onupgradeneeded = (event) => {
                 const database = event.target.result;
                 if (!database.objectStoreNames.contains('media')) {
                     database.createObjectStore('media', { keyPath: 'id' });
                 }
             };
-            // ⚠️ CORREÇÃO: timeout mais curto (1.2s)
-            setTimeout(() => {
-                if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); }
-            }, 1200);
-        } catch (e) {
-            useIndexedDB = false;
-            resolve(null);
-        }
+            setTimeout(() => { if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); } }, 1200);
+        } catch (e) { useIndexedDB = false; resolve(null); }
     });
 }
 
 async function saveMediaToDB(id, data) {
-    // Sempre salva no localStorage como cache rápido
     try { localStorage.setItem('media_' + id, data); } catch (e) {}
-    
     if (!useIndexedDB || !db) return;
     try {
         const transaction = db.transaction(['media'], 'readwrite');
@@ -360,15 +398,11 @@ async function saveMediaToDB(id, data) {
 }
 
 async function getMediaFromDB(id) {
-    // ⚠️ Cache em memória para evitar consultas repetidas
     if (loadedImages[id]) return loadedImages[id];
-    
-    // Tenta localStorage primeiro (mais rápido)
     try {
         const localData = localStorage.getItem('media_' + id);
         if (localData) { loadedImages[id] = localData; return localData; }
     } catch (e) {}
-    
     if (!useIndexedDB || !db) return null;
     try {
         return new Promise((resolve) => {
@@ -383,9 +417,7 @@ async function getMediaFromDB(id) {
             request.onerror = () => resolve(null);
             setTimeout(() => resolve(null), 1000);
         });
-    } catch (e) {
-        return null;
-    }
+    } catch (e) { return null; }
 }
 
 async function deleteMediaFromDB(id) {
@@ -406,14 +438,9 @@ function compressImage(file, maxWidth = 800, quality = 0.6) {
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                if (width > maxWidth) {
-                    height = (height * maxWidth) / width;
-                    width = maxWidth;
-                }
-                canvas.width = width;
-                canvas.height = height;
+                let width = img.width, height = img.height;
+                if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
+                canvas.width = width; canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 resolve(canvas.toDataURL('image/jpeg', quality));
@@ -427,9 +454,7 @@ function compressImage(file, maxWidth = 800, quality = 0.6) {
 }
 
 // ============ FUNÇÕES DE DADOS ============
-function getKey(catId, idx) {
-    return catId + '-' + idx;
-}
+function getKey(catId, idx) { return catId + '-' + idx; }
 
 function ensureItem(catId, idx) {
     const key = getKey(catId, idx);
@@ -444,7 +469,7 @@ function ensureItem(catId, idx) {
 
 // ============ RENDERIZAÇÃO ============
 function renderTabs() {
-    document.getElementById('tabs').innerHTML = categories.map(c => 
+    document.getElementById('tabs').innerHTML = categories.map(c =>
         '<button class="tab" data-cat="' + c.id + '" onclick="switchTab(\'' + c.id + '\')">' + c.icon + ' ' + c.name + '</button>'
     ).join('');
 }
@@ -467,16 +492,15 @@ function renderItem(catId, idx, label) {
     const key = getKey(catId, idx);
     const statusClass = data.status ? 'status-' + data.status : '';
     const evidenceShow = (data.status === 'repair' || data.status === 'critical') ? 'show' : '';
-    
+
     let mediaHTML = '';
     if (data.photos.length > 0 || data.audios.length > 0) {
         mediaHTML = '<div class="evidence-media">';
         data.photos.forEach((photoId, pIdx) => {
-            // ⚠️ Placeholder inicial — a imagem real será carregada depois sob demanda
             const placeholder = 'data:image/svg+xml,' + encodeURIComponent(
                 '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect fill="#334155" width="64" height="64"/><text x="32" y="40" text-anchor="middle" fill="#94a3b8" font-size="18">📷</text></svg>'
             );
-            mediaHTML += 
+            mediaHTML +=
                 '<div class="media-item">' +
                 '<img src="' + placeholder + '" ' +
                 'id="img-' + photoId + '" ' +
@@ -488,7 +512,7 @@ function renderItem(catId, idx, label) {
                 '</div>';
         });
         data.audios.forEach((audioId, aIdx) => {
-            mediaHTML += 
+            mediaHTML +=
                 '<div class="media-item audio" onclick="event.stopPropagation();playAudio(\'' + audioId + '\')">' +
                 '🎤' +
                 '<button class="media-remove" onclick="event.stopPropagation();removeAudio(\'' + catId + '\',' + idx + ',' + aIdx + ')">×</button>' +
@@ -496,7 +520,7 @@ function renderItem(catId, idx, label) {
         });
         mediaHTML += '</div>';
     }
-    
+
     return '' +
         '<div class="item ' + statusClass + '" id="item-' + key + '">' +
             '<div class="item-label">' + label + '</div>' +
@@ -539,18 +563,15 @@ function refreshItem(catId, idx) {
     const oldEl = document.getElementById('item-' + key);
     if (oldEl) {
         oldEl.outerHTML = renderItem(catId, idx, label);
-        // ⚠️ Recarrega as imagens desse item específico
         loadItemImages(catId, idx);
     }
 }
 
-// ⚠️ NOVA FUNÇÃO: Carrega imagens de um item específico
 async function loadItemImages(catId, idx) {
     const data = ensureItem(catId, idx);
     for (const photoId of data.photos) {
         const imgEl = document.getElementById('img-' + photoId);
         if (!imgEl) continue;
-        // Só carrega se ainda estiver com placeholder
         if (imgEl.src && imgEl.src.includes('svg+xml')) {
             try {
                 const dataUrl = await getMediaFromDB(photoId);
@@ -560,17 +581,12 @@ async function loadItemImages(catId, idx) {
     }
 }
 
-// ⚠️ NOVA FUNÇÃO: Carrega imagens de TODOS os itens de uma seção (aba)
 async function loadMediaForSection(catId) {
     const cat = categories.find(c => c.id === catId);
     if (!cat) return;
-    
-    // Carrega em lotes pequenos para não travar a UI
     for (let idx = 0; idx < cat.items.length; idx++) {
         const data = ensureItem(catId, idx);
         if (data.photos.length === 0) continue;
-        
-        // Processa até 3 fotos por vez
         for (let p = 0; p < data.photos.length; p++) {
             const photoId = data.photos[p];
             const imgEl = document.getElementById('img-' + photoId);
@@ -582,13 +598,10 @@ async function loadMediaForSection(catId) {
                 } catch (e) {}
             }
         }
-        
-        // Pequena pausa a cada item para não travar a UI
         if (idx % 3 === 2) await new Promise(r => setTimeout(r, 50));
     }
 }
 
-// ⚠️ CORREÇÃO: Carrega imagens APENAS da aba ativa ao trocar
 function switchTab(catId) {
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -596,14 +609,8 @@ function switchTab(catId) {
     const tab = document.querySelector('[data-cat="' + catId + '"]');
     if (section) section.classList.add('active');
     if (tab) tab.classList.add('active');
-    
-    // ⚠️ CORREÇÃO: Carrega mídias SOMENTE da aba que está sendo exibida
     loadMediaForSection(catId);
-    
-    // Scrolla a tab ativa para o centro
-    if (tab) {
-        tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
+    if (tab) tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 }
 
 function setStatus(catId, idx, status) {
@@ -658,10 +665,7 @@ async function handleAudioSelected(e) {
             showToast('🎤 Áudio salvo!');
             currentAudioTarget = null;
         };
-        reader.onerror = () => {
-            showToast('❌ Erro ao ler áudio');
-            currentAudioTarget = null;
-        };
+        reader.onerror = () => { showToast('❌ Erro ao ler áudio'); currentAudioTarget = null; };
         reader.readAsDataURL(file);
     } catch (err) {
         console.error('Erro ao salvar áudio:', err);
@@ -702,14 +706,8 @@ async function handlePhotoSelected(e) {
     try {
         showToast('⏳ Processando foto...');
         const compressed = await compressImage(file);
-        if (!compressed) {
-            showToast('❌ Erro ao processar foto');
-            currentPhotoTarget = null;
-            e.target.value = '';
-            return;
-        }
+        if (!compressed) { showToast('❌ Erro ao processar foto'); currentPhotoTarget = null; e.target.value = ''; return; }
         const photoId = 'photo-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        // Salva e já coloca no cache
         loadedImages[photoId] = compressed;
         await saveMediaToDB(photoId, compressed);
         const data = ensureItem(currentPhotoTarget.catId, currentPhotoTarget.idx);
@@ -772,7 +770,7 @@ async function generateReport() {
     const btn = document.getElementById('btnReport');
     btn.disabled = true;
     btn.textContent = '⏳ Gerando...';
-    
+
     try {
         const cliente = document.getElementById('cliente').value || '—';
         const veiculo = document.getElementById('veiculo').value || '—';
@@ -780,14 +778,14 @@ async function generateReport() {
         const km = document.getElementById('km').value || '—';
         const data = new Date().toLocaleDateString('pt-BR');
         const hora = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-        
+
         showToast('📦 Carregando evidências...');
-        
+
         // Coleta todas as mídias necessárias
         const mediaCache = {};
         const allPhotoIds = [];
         const allAudioIds = [];
-        
+
         for (const c of categories) {
             for (let idx = 0; idx < c.items.length; idx++) {
                 const itemData = ensureItem(c.id, idx);
@@ -799,7 +797,7 @@ async function generateReport() {
                 }
             }
         }
-        
+
         // Carrega em lotes para não travar
         for (let i = 0; i < allPhotoIds.length; i++) {
             const id = allPhotoIds[i];
@@ -816,100 +814,139 @@ async function generateReport() {
                 if (dataUrl) mediaCache[id] = dataUrl;
             }
         }
-        
-        let html = '<div class="report-content">';
-        html += '' +
-            '<div class="report-header">' +
+
+        // ========== MONTA O HTML DO RELATÓRIO ==========
+        let totalPhotos = 0, totalAudios = 0;
+        let reportHTML = '<div class="report-wrap">';
+
+        // Cabeçalho
+        reportHTML +=
+            '<div class="rp-header">' +
                 '<h2>📋 RELATÓRIO DE CHECKLIST</h2>' +
                 '<p>Mecânica Brasil — ' + data + ' às ' + hora + '</p>' +
-            '</div>' +
-            '<div class="report-info">' +
-                '<div class="report-info-row"><span>Cliente:</span><span>' + cliente + '</span></div>' +
-                '<div class="report-info-row"><span>Veículo:</span><span>' + veiculo + '</span></div>' +
-                '<div class="report-info-row"><span>Placa:</span><span>' + placa + '</span></div>' +
-                '<div class="report-info-row"><span>KM:</span><span>' + km + '</span></div>' +
             '</div>';
-        
-        let totalPhotos = 0, totalAudios = 0;
-        
+
+        // Dados do veículo
+        reportHTML +=
+            '<div class="rp-info">' +
+                '<div class="rp-info-row"><span>Cliente</span><span>' + cliente + '</span></div>' +
+                '<div class="rp-info-row"><span>Veículo</span><span>' + veiculo + '</span></div>' +
+                '<div class="rp-info-row"><span>Placa</span><span>' + placa + '</span></div>' +
+                '<div class="rp-info-row"><span>KM</span><span>' + km + '</span></div>' +
+            '</div>';
+
+        // Categorias e itens
         for (const c of categories) {
-            html += '<div class="report-category">';
-            html += '<h3>' + c.icon + ' ' + c.name + '</h3>';
-            
+            // Pula categorias sem nenhum item preenchido
+            let hasAnyStatus = false;
+            for (let idx = 0; idx < c.items.length; idx++) {
+                const itemData = ensureItem(c.id, idx);
+                if (itemData.status || itemData.photos.length > 0 || itemData.audios.length > 0) {
+                    hasAnyStatus = true;
+                    break;
+                }
+            }
+            if (!hasAnyStatus) continue;
+
+            reportHTML += '<div class="rp-category">';
+            reportHTML += '<h3>' + c.icon + ' ' + c.name + '</h3>';
+
             for (let idx = 0; idx < c.items.length; idx++) {
                 const item = c.items[idx];
                 const itemData = ensureItem(c.id, idx);
+                if (!itemData.status && itemData.photos.length === 0 && itemData.audios.length === 0) continue;
+
                 let icon = '';
                 if (itemData.status === 'ok') icon = '✅';
                 else if (itemData.status === 'repair') icon = '🔧';
                 else if (itemData.status === 'critical') icon = '⚠️';
-                
-                html += '<div class="report-item">';
-                html += '<span class="report-item-icon">' + icon + '</span>';
-                html += '<div class="report-item-text"><div>' + item + '</div></div></div>';
-                
+
+                reportHTML += '<div class="rp-item">';
+                reportHTML += '<span class="rp-item-icon">' + icon + '</span>';
+                reportHTML += '<span>' + item + '</span></div>';
+
+                // Fotos e áudios
                 if (itemData.photos.length > 0 || itemData.audios.length > 0) {
-                    html += '<div class="report-media-grid">';
+                    reportHTML += '<div class="rp-media-grid">';
                     for (const photoId of itemData.photos) {
                         const dataUrl = mediaCache[photoId];
                         if (dataUrl) {
-                            html += '<img src="' + dataUrl + '" class="report-photo" alt="Evidência">';
+                            reportHTML += '<img src="' + dataUrl + '" class="rp-photo" alt="Foto - ' + item + '" onclick="this.requestFullscreen?this.requestFullscreen():window.open(this.src)">';
                             totalPhotos++;
                         }
                     }
                     for (const audioId of itemData.audios) {
                         const dataUrl = mediaCache[audioId];
                         if (dataUrl) {
-                            html += '' +
-                                '<div class="report-audio-wrap">' +
-                                    '<div class="report-audio-icon">🎤</div>' +
+                            reportHTML +=
+                                '<div class="rp-audio-wrap">' +
+                                    '<div class="rp-audio-icon">🎤</div>' +
                                     '<div style="flex:1;min-width:0;">' +
-                                        '<div class="report-audio-label">Áudio - ' + item + '</div>' +
-                                        '<audio controls preload="none" src="' + dataUrl + '"></audio>' +
+                                        '<div class="rp-audio-label">Áudio - ' + item + '</div>' +
+                                        '<audio controls preload="metadata" src="' + dataUrl + '"></audio>' +
                                     '</div>' +
                                 '</div>';
                             totalAudios++;
                         }
                     }
-                    html += '</div>';
+                    reportHTML += '</div>';
                 }
             }
-            html += '</div>';
+            reportHTML += '</div>';
         }
-        
+
+        // Resumo
         const classLabel = generalClassification === 'green' ? '🟢 Bom' :
                            generalClassification === 'yellow' ? '🟡 Requer Atenção' :
                            generalClassification === 'red' ? '🔴 Crítico' : '—';
-        
-        html += '<div class="report-info">' +
-            '<div class="report-info-row"><span>Classificação:</span><span>' + classLabel + '</span></div>' +
-            '<div class="report-info-row"><span>Total de Fotos:</span><span>' + totalPhotos + '</span></div>' +
-            '<div class="report-info-row"><span>Total de Áudios:</span><span>' + totalAudios + '</span></div>' +
-        '</div>';
-        
-        if (generalObs) {
-            html += '<div class="report-info">' +
-                '<div style="font-weight:600;margin-bottom:6px;">📝 Observações Gerais:</div>' +
-                '<p style="padding:4px 0;white-space:pre-wrap;">' + generalObs + '</p>' +
+
+        reportHTML +=
+            '<div class="rp-info">' +
+                '<div class="rp-info-row"><span>Classificação</span><span>' + classLabel + '</span></div>' +
+                '<div class="rp-info-row"><span>📷 Fotos no relatório</span><span>' + totalPhotos + '</span></div>' +
+                '<div class="rp-info-row"><span>🎤 Áudios no relatório</span><span>' + totalAudios + '</span></div>' +
             '</div>';
+
+        if (generalObs) {
+            reportHTML +=
+                '<div class="rp-info">' +
+                    '<div style="font-weight:600;margin-bottom:6px;color:#f59e0b;">📝 Observações Gerais:</div>' +
+                    '<p style="padding:4px 0;white-space:pre-wrap;">' + generalObs + '</p>' +
+                '</div>';
         }
-        
-        html += '<p style="text-align:center;color:#64748b;font-size:10px;margin-top:16px;">Mecânica Brasil © ' + new Date().getFullYear() + '</p>';
-        html += '</div>';
-        
-        const actionsHTML = '' +
-            '<button class="btn btn-primary" onclick="printReport()" style="width:100%;margin-top:8px;">🖨️ Imprimir / Salvar PDF</button>' +
-            '<button class="btn btn-secondary" onclick="shareReportHTML()" style="width:100%;margin-top:6px;">📤 Compartilhar</button>' +
-            '<button class="btn btn-secondary" onclick="downloadReportHTML()" style="width:100%;margin-top:6px;">💾 Baixar HTML</button>' +
-            '<button class="btn btn-secondary" onclick="closeModal(\'reportModal\')" style="width:100%;margin-top:6px;">Fechar</button>';
-        
-        document.getElementById('reportContent').innerHTML = html + actionsHTML;
+
+        reportHTML += '<div class="rp-footer">Mecânica Brasil © ' + new Date().getFullYear() + '</div>';
+        reportHTML += '</div>'; // fecha .report-wrap
+
+        // ========== BOTÕES DE AÇÃO ==========
+        const actionsHTML =
+            '<div class="report-actions">' +
+                '<button class="btn btn-whatsapp" onclick="shareViaWhatsApp()" style="background:#25D366;color:#fff;">' +
+                    '📱 Compartilhar via WhatsApp' +
+                '</button>' +
+                '<button class="btn btn-primary" onclick="shareReportAsFile()">' +
+                    '📤 Compartilhar Arquivo (.html)' +
+                '</button>' +
+                '<button class="btn btn-secondary" onclick="downloadReportHTML()">' +
+                    '💾 Baixar Relatório (.html)' +
+                '</button>' +
+                '<button class="btn btn-secondary" onclick="printReport()">' +
+                    '🖨️ Imprimir / Salvar PDF' +
+                '</button>' +
+                '<button class="btn btn-secondary" onclick="closeModal(\'reportModal\')">' +
+                    'Fechar' +
+                '</button>' +
+            '</div>';
+
+        document.getElementById('reportContent').innerHTML = reportHTML + actionsHTML;
         document.getElementById('reportModal').classList.add('show');
         document.body.classList.add('no-scroll');
-        
-        window._reportHTML = html;
-        window._reportStats = { totalPhotos, totalAudios };
-        
+
+        // Guarda os dados para uso nos botões
+        window._reportMediaCache = mediaCache;
+        window._reportData = { cliente, veiculo, placa, km, data, hora, totalPhotos, totalAudios };
+        window._reportHTMLBody = reportHTML;
+
         showToast('✅ Relatório gerado!');
     } catch (err) {
         console.error('Erro ao gerar relatório:', err);
@@ -920,124 +957,189 @@ async function generateReport() {
     }
 }
 
-function printReport() {
-    const html = window._reportHTML;
-    if (!html) return;
-    const win = window.open('', '_blank');
-    if (!win) { showToast('❌ Pop-up bloqueado'); return; }
-    win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório</title>' +
-'<style>' +
-'*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,Arial,sans-serif;padding:20px;color:#000;font-size:12px;line-height:1.5;background:#fff}' +
-'.report-header{text-align:center;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #e11d48}' +
-'.report-header h2{font-size:20px;margin-bottom:4px}' +
-'.report-info{background:#f5f5f5;border-radius:8px;padding:12px;margin-bottom:16px}' +
-'.report-info-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #ddd}' +
-'.report-info-row:last-child{border:none}' +
-'.report-info-row span:first-child{color:#666}' +
-'.report-info-row span:last-child{font-weight:600}' +
-'.report-category{margin-bottom:20px;page-break-inside:avoid}' +
-'.report-category h3{font-size:15px;color:#e11d48;margin-bottom:8px;border-bottom:1px solid #ddd;padding-bottom:4px}' +
-'.report-item{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid #f0f0f0}' +
-'.report-media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0 8px 22px;padding:8px;background:#fafafa;border-radius:6px;border-left:3px solid #e11d48}' +
-'.report-photo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px;border:1px solid #ccc}' +
-'.report-audio-wrap{grid-column:1/-1;background:#e3f2fd;border-radius:6px;padding:8px;display:flex;align-items:center;gap:10px;border:1px solid #90caf9}' +
-'.report-audio-icon{width:32px;height:32px;background:#1976d2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px}' +
-'.report-audio-label{font-size:11px;color:#666;margin-bottom:2px}' +
-'.report-audio-wrap audio{height:32px}' +
-'@media print{body{padding:10mm}.report-category{page-break-inside:avoid}}' +
-'@page{margin:15mm}' +
-'</style></head><body>' + html + '</body></html>');
-    win.document.close();
-    setTimeout(() => { win.focus(); win.print(); }, 600);
+// ========== COMPARTILHAR VIA WHATSAPP ==========
+async function shareViaWhatsApp() {
+    const dados = window._reportData;
+    if (!dados) { showToast('❌ Gere o relatório primeiro'); return; }
+
+    // Monta texto resumido
+    let texto = '*📋 Checklist Mecânica Brasil*\n';
+    texto += '━━━━━━━━━━━━━━━━\n';
+    texto += '👤 *Cliente:* ' + dados.cliente + '\n';
+    texto += '🚗 *Veículo:* ' + dados.veiculo + '\n';
+    texto += '🔢 *Placa:* ' + dados.placa + '\n';
+    texto += '📏 *KM:* ' + dados.km + '\n';
+    texto += '📅 *Data:* ' + dados.data + ' às ' + dados.hora + '\n';
+    texto += '━━━━━━━━━━━━━━━━\n';
+
+    // Resumo dos itens
+    let totalOk = 0, totalRepair = 0, totalCritical = 0;
+    for (const c of categories) {
+        for (let idx = 0; idx < c.items.length; idx++) {
+            const itemData = ensureItem(c.id, idx);
+            if (itemData.status === 'ok') totalOk++;
+            else if (itemData.status === 'repair') totalRepair++;
+            else if (itemData.status === 'critical') totalCritical++;
+        }
+    }
+    texto += '✅ Itens OK: ' + totalOk + '\n';
+    texto += '🔧 Precisam de reparo: ' + totalRepair + '\n';
+    texto += '⚠️ Críticos: ' + totalCritical + '\n';
+    texto += '━━━━━━━━━━━━━━━━\n';
+
+    const classLabel = generalClassification === 'green' ? '🟢 Bom' :
+                       generalClassification === 'yellow' ? '🟡 Requer Atenção' :
+                       generalClassification === 'red' ? '🔴 Crítico' : '—';
+    texto += '🏁 *Classificação:* ' + classLabel + '\n';
+    texto += '📷 Fotos: ' + dados.totalPhotos + ' | 🎤 Áudios: ' + dados.totalAudios + '\n';
+
+    if (generalObs) {
+        texto += '━━━━━━━━━━━━━━━━\n';
+        texto += '📝 *Obs:* ' + generalObs.substring(0, 200) + (generalObs.length > 200 ? '...' : '') + '\n';
+    }
+
+    texto += '━━━━━━━━━━━━━━━━\n';
+    texto += '💡 _Para ver as fotos e áudios, peça o arquivo .html completo._';
+
+    // Tenta abrir WhatsApp
+    const url = 'https://wa.me/?text=' + encodeURIComponent(texto);
+    const win = window.open(url, '_blank');
+
+    if (!win) {
+        // Fallback: copia o texto
+        try {
+            await navigator.clipboard.writeText(texto);
+            showToast('📋 Texto copiado! Cole no WhatsApp');
+        } catch (e) {
+            showToast('⚠️ Abra o WhatsApp e cole o texto');
+            // Mostra o texto em um modal para copiar manualmente
+            document.getElementById('reportContent').innerHTML =
+                '<div class="report-wrap">' +
+                    '<h2 style="margin-bottom:12px;">📋 Resumo para WhatsApp</h2>' +
+                    '<div class="rp-info" style="white-space:pre-wrap;font-size:12px;">' + texto.replace(/\*/g, '') + '</div>' +
+                    '<button class="btn btn-primary" onclick="navigator.clipboard.writeText(\'' + texto.replace(/'/g, "\\'") + '\').then(()=>showToast(\'📋 Copiado!\')).catch(()=>showToast(\'⚠️ Selecione e copie o texto\'))" style="width:100%;margin-top:10px;">📋 Copiar Texto</button>' +
+                    '<button class="btn btn-secondary" onclick="closeModal(\'reportModal\')" style="width:100%;margin-top:6px;">Fechar</button>' +
+                '</div>';
+        }
+    }
 }
 
+// ========== COMPARTILHAR COMO ARQUIVO .HTML ==========
+async function shareReportAsFile() {
+    const htmlBody = window._reportHTMLBody;
+    const dados = window._reportData;
+    if (!htmlBody) { showToast('❌ Gere o relatório primeiro'); return; }
+
+    try {
+        showToast('📦 Preparando arquivo...');
+
+        const fullHTML = buildFullReportHTML(htmlBody, dados);
+        const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+        const fileName = 'checklist_' + (dados.cliente || 'cliente').replace(/\s+/g, '_') + '_' + (dados.placa || 'placa').replace(/\s+/g, '_') + '.html';
+        const file = new File([blob], fileName, { type: 'text/html' });
+
+        // Tenta compartilhar como arquivo (funciona no Android, Chrome, Edge)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                title: 'Checklist ' + dados.cliente + ' - ' + dados.placa,
+                text: '📋 Relatório de checklist com ' + dados.totalPhotos + ' foto(s) e ' + dados.totalAudios + ' áudio(s)',
+                files: [file]
+            });
+            showToast('✅ Compartilhado!');
+            return;
+        }
+
+        // Tenta compartilhar via Web Share API (texto + URL)
+        if (navigator.share) {
+            // Como não dá pra compartilhar arquivo, baixa e avisa
+            downloadReportHTML();
+            showToast('⚠️ Arquivo baixado. Compartilhe manualmente!');
+            return;
+        }
+
+        // Fallback final: download
+        downloadReportHTML();
+        showToast('💾 Relatório baixado!');
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error('Erro ao compartilhar:', err);
+            downloadReportHTML();
+            showToast('⚠️ Não foi possível compartilhar. Arquivo baixado.');
+        }
+    }
+}
+
+// ========== DOWNLOAD DO HTML COMPLETO ==========
 function downloadReportHTML() {
-    const html = window._reportHTML;
-    if (!html) return;
-    const cliente = document.getElementById('cliente').value || 'cliente';
-    const placa = document.getElementById('placa').value || 'placa';
-    const dateStr = new Date().toISOString().split('T')[0];
-    const fullHTML = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatório - ' + cliente + ' - ' + placa + '</title>' +
-'<style>' +
-'*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,Arial,sans-serif;padding:20px;color:#1e293b;font-size:13px;line-height:1.5;background:#fff;max-width:900px;margin:0 auto}' +
-'.report-header{text-align:center;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #e11d48}' +
-'.report-header h2{font-size:22px;margin-bottom:4px}' +
-'.report-info{background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:16px;border:1px solid #e2e8f0}' +
-'.report-info-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0}' +
-'.report-info-row:last-child{border:none}' +
-'.report-info-row span:first-child{color:#64748b}' +
-'.report-info-row span:last-child{font-weight:600}' +
-'.report-category{margin-bottom:20px}' +
-'.report-category h3{font-size:16px;color:#e11d48;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}' +
-'.report-item{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9}' +
-'.report-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:10px 0 10px 22px;padding:10px;background:#f8fafc;border-radius:8px;border-left:3px solid #e11d48}' +
-'.report-photo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;display:block;cursor:pointer}' +
-'.report-audio-wrap{grid-column:1/-1;background:#eff6ff;border-radius:8px;padding:10px;display:flex;align-items:center;gap:10px;border:1px solid #bfdbfe}' +
-'.report-audio-icon{width:40px;height:40px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px}' +
-'.report-audio-label{font-size:11px;color:#64748b;margin-bottom:2px}' +
-'.report-audio-wrap audio{flex:1;height:36px}' +
-'@media print{body{padding:10mm}.report-category{page-break-inside:avoid}}' +
-'@page{margin:15mm}' +
-'</style></head><body>' + html + '<script>document.querySelectorAll(".report-photo").forEach(function(img){img.addEventListener("click",function(){var w=window.open("","_blank");if(w){w.document.write(\'<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="\'+this.src+\'" style="max-width:100%;max-height:100vh;"></body>\');}})});<' + '/script></body></html>';
+    const htmlBody = window._reportHTMLBody;
+    const dados = window._reportData;
+    if (!htmlBody) { showToast('❌ Gere o relatório primeiro'); return; }
+
+    const fullHTML = buildFullReportHTML(htmlBody, dados);
+    const fileName = 'checklist_' + (dados.cliente || 'cliente').replace(/\s+/g, '_') + '_' + (dados.placa || 'placa').replace(/\s+/g, '_') + '_' + new Date().toISOString().split('T')[0] + '.html';
     const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'checklist_' + cliente.replace(/\s+/g,'_') + '_' + placa.replace(/\s+/g,'_') + '_' + dateStr + '.html';
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
     showToast('💾 Relatório baixado!');
 }
 
-async function shareReportHTML() {
-    const html = window._reportHTML;
-    if (!html) return;
-    const cliente = document.getElementById('cliente').value || 'cliente';
-    const placa = document.getElementById('placa').value || 'placa';
-    const dateStr = new Date().toISOString().split('T')[0];
-    const fullHTML = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatório - ' + cliente + ' - ' + placa + '</title>' +
-'<style>' +
-'*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,Arial,sans-serif;padding:20px;color:#1e293b;font-size:13px;line-height:1.5;background:#fff;max-width:900px;margin:0 auto}' +
-'.report-header{text-align:center;margin-bottom:20px;padding-bottom:12px;border-bottom:3px solid #e11d48}' +
-'.report-header h2{font-size:22px;margin-bottom:4px}' +
-'.report-info{background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:16px;border:1px solid #e2e8f0}' +
-'.report-info-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #e2e8f0}' +
-'.report-info-row:last-child{border:none}' +
-'.report-info-row span:first-child{color:#64748b}' +
-'.report-info-row span:last-child{font-weight:600}' +
-'.report-category{margin-bottom:20px}' +
-'.report-category h3{font-size:16px;color:#e11d48;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}' +
-'.report-item{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #f1f5f9}' +
-'.report-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:10px 0 10px 22px;padding:10px;background:#f8fafc;border-radius:8px;border-left:3px solid #e11d48}' +
-'.report-photo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;display:block}' +
-'.report-audio-wrap{grid-column:1/-1;background:#eff6ff;border-radius:8px;padding:10px;display:flex;align-items:center;gap:10px;border:1px solid #bfdbfe}' +
-'.report-audio-icon{width:40px;height:40px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px}' +
-'.report-audio-label{font-size:11px;color:#64748b;margin-bottom:2px}' +
-'.report-audio-wrap audio{flex:1;height:36px}' +
-'</style></head><body>' + html + '</body></html>';
-    try {
-        const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
-        const file = new File([blob], 'checklist_' + placa + '_' + dateStr + '.html', { type: 'text/html' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ title: 'Checklist ' + cliente + ' - ' + placa, files: [file] });
-            showToast('📤 Compartilhado!');
-            return;
-        }
-        if (navigator.share) {
-            const stats = window._reportStats || { totalPhotos: 0, totalAudios: 0 };
-            await navigator.share({ 
-                title: 'Checklist ' + cliente, 
-                text: '📋 Checklist ' + cliente + ' - ' + placa + '\n📷 ' + stats.totalPhotos + ' foto(s) | 🎤 ' + stats.totalAudios + ' áudio(s)' 
-            });
-            showToast('📤 Compartilhado!');
-        } else {
-            downloadReportHTML();
-        }
-    } catch (err) {
-        if (err.name !== 'AbortError') downloadReportHTML();
-    }
+// ========== CONSTRÓI O HTML COMPLETO DO RELATÓRIO ==========
+function buildFullReportHTML(bodyHTML, dados) {
+    return '<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n' +
+        '<meta charset="UTF-8">\n' +
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+        '<title>Checklist - ' + (dados.cliente || 'Cliente') + ' - ' + (dados.placa || 'Placa') + '</title>\n' +
+        '<style>\n' +
+        '*{margin:0;padding:0;box-sizing:border-box}\n' +
+        'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:20px;color:#1e293b;font-size:13px;line-height:1.6;background:#fff;max-width:900px;margin:0 auto}\n' +
+        '.report-wrap{color:#1e293b}\n' +
+        '.rp-header{text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #e11d48}\n' +
+        '.rp-header h2{font-size:20px;color:#0f172a;margin-bottom:4px}\n' +
+        '.rp-header p{color:#64748b;font-size:12px}\n' +
+        '.rp-info{background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid #e2e8f0}\n' +
+        '.rp-info-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e2e8f0}\n' +
+        '.rp-info-row:last-child{border:none}\n' +
+        '.rp-info-row span:first-child{color:#64748b}\n' +
+        '.rp-info-row span:last-child{font-weight:600;color:#0f172a}\n' +
+        '.rp-category{margin-bottom:20px;page-break-inside:avoid}\n' +
+        '.rp-category h3{font-size:15px;color:#e11d48;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}\n' +
+        '.rp-item{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;align-items:center}\n' +
+        '.rp-item-icon{font-size:14px;flex-shrink:0}\n' +
+        '.rp-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:10px 0 10px 22px;padding:12px;background:#f8fafc;border-radius:8px;border-left:3px solid #e11d48}\n' +
+        '.rp-photo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer;display:block;transition:transform .2s}\n' +
+        '.rp-photo:hover{transform:scale(1.02)}\n' +
+        '.rp-audio-wrap{grid-column:1/-1;background:#eff6ff;border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;border:1px solid #bfdbfe}\n' +
+        '.rp-audio-icon{width:42px;height:42px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:#fff}\n' +
+        '.rp-audio-label{font-size:11px;color:#64748b;margin-bottom:3px}\n' +
+        '.rp-audio-wrap audio{width:100%;height:34px}\n' +
+        '.rp-footer{text-align:center;color:#94a3b8;font-size:10px;margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0}\n' +
+        '@media print{body{padding:10mm}.rp-category{page-break-inside:avoid}}\n' +
+        '@page{margin:15mm}\n' +
+        '</style>\n</head>\n<body>\n' +
+        bodyHTML +
+        '\n<script>\n' +
+        'document.querySelectorAll(".rp-photo").forEach(function(img){img.addEventListener("click",function(){if(this.requestFullscreen){this.requestFullscreen()}else{var w=window.open("","_blank");if(w){w.document.write(\'<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh}img{max-width:100%;max-height:100vh}</style></head><body><img src="\'+this.src+\'"></body></html>\')}}}});\n' +
+        '</' + 'script>\n</body>\n</html>';
+}
+
+// ========== IMPRIMIR ==========
+function printReport() {
+    const htmlBody = window._reportHTMLBody;
+    const dados = window._reportData;
+    if (!htmlBody) return;
+
+    const fullHTML = buildFullReportHTML(htmlBody, dados);
+    const win = window.open('', '_blank');
+    if (!win) { showToast('❌ Pop-up bloqueado'); return; }
+    win.document.write(fullHTML);
+    win.document.close();
+    setTimeout(() => { win.focus(); win.print(); }, 800);
 }
 
 // ============ PERSISTÊNCIA ============
@@ -1055,7 +1157,6 @@ async function loadData() {
             checklistData = data.checklist || {};
             generalClassification = data.classification || '';
             generalObs = data.obs || '';
-            // Sanitiza dados antigos
             Object.keys(checklistData).forEach(key => {
                 const item = checklistData[key];
                 if (!item || typeof item !== 'object') {
@@ -1074,91 +1175,45 @@ async function loadData() {
     }
 }
 
-// ⚠️ CORREÇÃO: Reset aguarda o banco ser deletado antes de recarregar
 function resetAllData() {
     if (!confirm('⚠️ Isso apagará TODOS os dados do checklist (fotos, áudios, preenchimentos). Continuar?')) return;
-    
     showToast('🔄 Limpando dados...');
-    
-    // Limpa cache de imagens
     loadedImages = {};
-    
-    // Limpa localStorage
     try {
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && (key.startsWith('mb_') || key.startsWith('media_'))) {
-                keysToRemove.push(key);
-            }
+            if (key && (key.startsWith('mb_') || key.startsWith('media_'))) keysToRemove.push(key);
         }
         keysToRemove.forEach(k => localStorage.removeItem(k));
     } catch(e) {}
-    
-    // Reseta variáveis
     checklistData = {};
     generalClassification = '';
     generalObs = '';
     db = null;
     useIndexedDB = true;
-    
-    // ⚠️ CORREÇÃO: Aguarda deleção do banco antes de recarregar
     try {
         if (window.indexedDB) {
             const delReq = indexedDB.deleteDatabase('MBChecklistDB');
             let dbDeleted = false;
-            
-            delReq.onsuccess = () => {
-                if (!dbDeleted) { dbDeleted = true; doReload(); }
-            };
-            delReq.onerror = () => {
-                if (!dbDeleted) { dbDeleted = true; doReload(); }
-            };
-            delReq.onblocked = () => {
-                if (!dbDeleted) { dbDeleted = true; doReload(); }
-            };
-            // Fallback: recarrega após 2s mesmo se o callback não disparar
-            setTimeout(() => {
-                if (!dbDeleted) { dbDeleted = true; doReload(); }
-            }, 2000);
-        } else {
-            doReload();
-        }
-    } catch(e) {
-        doReload();
-    }
-    
-    function doReload() {
-        location.reload();
-    }
+            delReq.onsuccess = () => { if (!dbDeleted) { dbDeleted = true; doReload(); } };
+            delReq.onerror = () => { if (!dbDeleted) { dbDeleted = true; doReload(); } };
+            delReq.onblocked = () => { if (!dbDeleted) { dbDeleted = true; doReload(); } };
+            setTimeout(() => { if (!dbDeleted) { dbDeleted = true; doReload(); } }, 2000);
+        } else { doReload(); }
+    } catch(e) { doReload(); }
+    function doReload() { location.reload(); }
 }
 
 // ============ INICIALIZAÇÃO ============
 async function init() {
-    // Passo 1: Abrir banco
-    try {
-        await openDB();
-    } catch (e) {
-        useIndexedDB = false;
-    }
-    
-    // Passo 2: Carregar dados salvos
-    try {
-        await loadData();
-    } catch (e) {
-        checklistData = {};
-        generalClassification = '';
-        generalObs = '';
-    }
-    
-    // Passo 3: Renderizar interface
+    try { await openDB(); } catch (e) { useIndexedDB = false; }
+    try { await loadData(); } catch (e) { checklistData = {}; generalClassification = ''; generalObs = ''; }
     try {
         renderTabs();
         renderAllSections();
         updateProgress();
-        // ⚠️ CORREÇÃO: Carrega mídias apenas da primeira aba (não todas de uma vez)
         switchTab(categories[0].id);
-        // loadMediaForSection já é chamado dentro do switchTab
     } catch (e) {
         console.error('Erro crítico ao renderizar:', e);
         try {
@@ -1168,51 +1223,38 @@ async function init() {
             switchTab(categories[0].id);
             showToast('⚠️ App carregado com limitações');
         } catch (e2) {
-            document.getElementById('content').innerHTML = '' +
+            document.getElementById('content').innerHTML =
                 '<div style="text-align:center;padding:40px 20px;">' +
                     '<div style="font-size:50px;margin-bottom:16px;">⚠️</div>' +
                     '<div style="color:#f59e0b;font-weight:700;margin-bottom:8px;">Erro ao carregar o app</div>' +
                     '<div style="color:#94a3b8;margin-bottom:20px;font-size:14px;">Provavelmente há dados corrompidos</div>' +
-                    '<button class="btn btn-primary" onclick="resetAllData()" style="width:auto;display:inline-block;padding:12px 28px;font-size:14px;">' +
-                        '🔄 Limpar Dados e Reiniciar' +
-                    '</button>' +
+                    '<button class="btn btn-primary" onclick="resetAllData()" style="width:auto;display:inline-block;padding:12px 28px;font-size:14px;">🔄 Limpar Dados e Reiniciar</button>' +
                 '</div>';
             return;
         }
     }
-    
-    // Passo 4: Configurar campos de info
     try {
         document.getElementById('cliente').value = localStorage.getItem('mb_cliente') || '';
         document.getElementById('veiculo').value = localStorage.getItem('mb_veiculo') || '';
         document.getElementById('placa').value = localStorage.getItem('mb_placa') || '';
         document.getElementById('km').value = localStorage.getItem('mb_km') || '';
-        
         ['cliente', 'veiculo', 'placa', 'km'].forEach(id => {
             document.getElementById(id).addEventListener('input', function() {
                 localStorage.setItem('mb_' + id, document.getElementById(id).value);
             });
         });
     } catch (e) {}
-    
-    // Passo 5: Configurar listeners de arquivo
     try {
         document.getElementById('photoInput').addEventListener('change', handlePhotoSelected);
         document.getElementById('audioInput').addEventListener('change', handleAudioSelected);
     } catch (e) {}
-    
-    // Passo 6: Configurar fechamento de modais
     try {
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.remove('show');
-                    document.body.classList.remove('no-scroll');
-                }
+                if (e.target === this) { this.classList.remove('show'); document.body.classList.remove('no-scroll'); }
             });
         });
     } catch (e) {}
-    
     showToast('✅ App carregado!');
 }
 
@@ -1224,7 +1266,6 @@ function showToast(msg) {
     toast._timeout = setTimeout(() => toast.classList.remove('show'), 2500);
 }
 
-// Inicia o app
 init();
 </script>
 </body>
