@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerador de Código - MB Checklist</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #0f172a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 20px;
+      padding: 30px 24px;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .card h1 {
+      font-size: 22px;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .card p.sub {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+      margin-top: 14px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #fff;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    input::placeholder { text-transform: none; letter-spacing: normal; color: #64748b; }
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    button:active { transform: scale(0.98); }
+    .result {
+      margin-top: 20px;
+      padding: 16px;
+      background: #0f172a;
+      border-radius: 12px;
+      text-align: center;
+      display: none;
+    }
+    .result.show { display: block; }
+    .result .code {
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      color: #22c55e;
+      margin-bottom: 6px;
+    }
+    .result .info {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .copy-btn {
+      margin-top: 10px;
+      background: #334155;
+      font-size: 13px;
+      padding: 8px;
+    }
+    .footer-note {
+      margin-top: 20px;
+      font-size: 11px;
+      color: #64748b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>🔑 Gerador de Código</h1>
+  <p class="sub">MB Checklist — Liberação de acesso por mecânico</p>
+
+  <label for="mechId">ID do mecânico (enviado por ele na tela de bloqueio)</label>
+  <input type="text" id="mechId" placeholder="Ex: A3F9K2" maxlength="10">
+
+  <label for="cycleOverride">Ciclo (opcional — deixe vazio para usar o mês/ano atual)</label>
+  <input type="text" id="cycleOverride" placeholder="Ex: 2026-7" style="text-transform:none;">
+
+  <button onclick="gerarCodigo()">Gerar código de liberação</button>
+
+  <div class="result" id="resultBox">
+    <div class="code" id="resultCode"></div>
+    <div class="info" id="resultInfo"></div>
+    <button class="copy-btn" onclick="copiarCodigo()">📋 Copiar código</button>
+  </div>
+
+  <p class="footer-note">⚠️ Este código é válido apenas para o ciclo (mês/ano) exibido acima. Gere apenas para mecânicos ativos na equipe.</p>
+</div>
+
+<script>
+  // ⚠️ IMPORTANTE: essa senha DEVE ser idêntica à usada no checklist principal
+  const LICENSE_SECRET = "MB_MECANICA_2026";
+
+  function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+
+  function generateUnlockCode(mechanicId, cycleKey) {
+    const raw = LICENSE_SECRET + "-" + mechanicId + "-" + cycleKey;
+    const hash = simpleHash(raw);
+    return hash.toString(36).toUpperCase().padStart(6, '0').slice(0, 6);
+  }
+
+  function getCurrentCycleKey() {
+    const now = new Date();
+    return now.getFullYear() + '-' + (now.getMonth() + 1);
+  }
+
+  function gerarCodigo() {
+    const mechId = document.getElementById('mechId').value.trim().toUpperCase();
+    let cycle = document.getElementById('cycleOverride').value.trim();
+
+    if (!mechId) {
+      alert('Digite o ID do mecânico');
+      return;
+    }
+
+    if (!cycle) {
+      cycle = getCurrentCycleKey();
+    }
+
+    const code = generateUnlockCode(mechId, cycle);
+
+    document.getElementById('resultCode').textContent = code;
+    document.getElementById('resultInfo').textContent =
+      'ID: ' + mechId + ' | Ciclo: ' + cycle;
+    document.getElementById('resultBox').classList.add('show');
+  }
+
+  function copiarCodigo() {
+    const code = document.getElementById('resultCode').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      alert('Código copiado: ' + code);
+    });
+  }
+</script>
+
+</body>
+</html>
