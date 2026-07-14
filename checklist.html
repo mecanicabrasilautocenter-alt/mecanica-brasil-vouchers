@@ -117,9 +117,9 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
 .evidence { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #334155; }
 .evidence.show { display: block; }
 .evidence-title { font-size: 11px; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
-.evidence-buttons { display: flex; gap: 6px; margin-bottom: 6px; }
+.evidence-buttons { display: flex; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
 .ev-btn {
-    flex: 1; padding: 10px; border-radius: 8px; border: none;
+    flex: 1; min-width: 70px; padding: 10px; border-radius: 8px; border: none;
     font-size: 12px; font-weight: 700; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     gap: 5px; transition: all .2s; -webkit-appearance: none;
@@ -128,6 +128,7 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
 .ev-btn:active { transform: scale(.95); }
 .ev-btn.voice { background: #3b82f6; color: #fff; }
 .ev-btn.photo { background: #8b5cf6; color: #fff; }
+.ev-btn.video { background: #dc2626; color: #fff; }
 
 .evidence-media { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .media-item {
@@ -135,6 +136,7 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
     border-radius: 8px; overflow: hidden; border: 2px solid #334155;
 }
 .media-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .media-item.audio {
     background: #1e40af; display: flex; align-items: center;
     justify-content: center; font-size: 22px; cursor: pointer;
@@ -146,7 +148,7 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
     font-size: 10px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     -webkit-appearance: none; touch-action: manipulation;
-    line-height: 1;
+    line-height: 1; z-index: 2;
 }
 
 .bottom-bar {
@@ -223,7 +225,27 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
 .report-wrap .rp-photo {
     width: 100%; aspect-ratio: 1; object-fit: cover;
     border-radius: 6px; border: 1px solid #334155; cursor: pointer; display: block;
+    transition: transform .2s;
 }
+.report-wrap .rp-photo:hover { transform: scale(1.02); }
+.report-wrap .rp-video-wrap {
+    grid-column: 1 / -1; background: #0a0f1f; border-radius: 8px;
+    padding: 10px; border: 1px solid #7f1d1d;
+}
+.report-wrap .rp-video {
+    width: 100%; max-height: 300px; border-radius: 6px;
+    border: 1px solid #334155; background: #000; display: block;
+}
+.report-wrap .rp-video-label {
+    font-size: 11px; color: #f87171; margin-bottom: 4px; font-weight: 600;
+}
+.report-wrap .rp-download-btn {
+    display: inline-block; margin-top: 4px; padding: 4px 10px;
+    background: #334155; color: #e2e8f0; border: none;
+    border-radius: 6px; font-size: 10px; cursor: pointer;
+    text-decoration: none; font-weight: 600;
+}
+.report-wrap .rp-download-btn:hover { background: #475569; }
 .report-wrap .rp-audio-wrap {
     grid-column: 1 / -1; background: #0a1929; border-radius: 8px;
     padding: 10px; display: flex; align-items: center; gap: 10px;
@@ -257,6 +279,14 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
 .class-btn.active-green { background: #10b981; border-color: #10b981; color: #fff; }
 .class-btn.active-yellow { background: #f59e0b; border-color: #f59e0b; color: #000; }
 .class-btn.active-red { background: #ef4444; border-color: #ef4444; color: #fff; }
+
+/* Preview WhatsApp */
+.whatsapp-preview {
+    background: #0a3320; border-radius: 10px; padding: 14px;
+    border: 2px solid #25D366; margin-bottom: 12px;
+    white-space: pre-wrap; font-size: 12px; line-height: 1.6;
+    color: #e2e8f0; max-height: 300px; overflow-y: auto;
+}
 
 .toast {
     position: fixed; top: calc(16px + env(safe-area-inset-top));
@@ -336,8 +366,13 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
     <div class="modal" id="reportContent"></div>
 </div>
 
+<div class="modal-overlay" id="whatsappPreviewModal">
+    <div class="modal" id="whatsappPreviewContent"></div>
+</div>
+
 <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
 <input type="file" id="audioInput" accept="audio/*" style="display:none">
+<input type="file" id="videoInput" accept="video/*" capture="environment" style="display:none">
 
 <script>
 // ============ CATEGORIAS DO CHECKLIST ============
@@ -362,6 +397,7 @@ let generalClassification = '';
 let generalObs = '';
 let currentPhotoTarget = null;
 let currentAudioTarget = null;
+let currentVideoTarget = null;
 let useIndexedDB = true;
 let db = null;
 let loadedImages = {};
@@ -453,17 +489,35 @@ function compressImage(file, maxWidth = 800, quality = 0.6) {
     });
 }
 
+function compressVideo(file, maxSizeMB = 15) {
+    return new Promise((resolve) => {
+        if (file.size <= maxSizeMB * 1024 * 1024) {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(file);
+            return;
+        }
+        showToast('⚠️ Vídeo grande (' + Math.round(file.size/(1024*1024)) + 'MB). Processando...');
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+    });
+}
+
 // ============ FUNÇÕES DE DADOS ============
 function getKey(catId, idx) { return catId + '-' + idx; }
 
 function ensureItem(catId, idx) {
     const key = getKey(catId, idx);
     if (!checklistData[key] || typeof checklistData[key] !== 'object' || Array.isArray(checklistData[key])) {
-        checklistData[key] = { status: null, photos: [], audios: [] };
+        checklistData[key] = { status: null, photos: [], audios: [], videos: [] };
     }
     const item = checklistData[key];
     if (!Array.isArray(item.photos)) item.photos = [];
     if (!Array.isArray(item.audios)) item.audios = [];
+    if (!Array.isArray(item.videos)) item.videos = [];
     return item;
 }
 
@@ -494,8 +548,20 @@ function renderItem(catId, idx, label) {
     const evidenceShow = (data.status === 'repair' || data.status === 'critical') ? 'show' : '';
 
     let mediaHTML = '';
-    if (data.photos.length > 0 || data.audios.length > 0) {
+    const hasMedia = data.photos.length > 0 || data.audios.length > 0 || data.videos.length > 0;
+    if (hasMedia) {
         mediaHTML = '<div class="evidence-media">';
+        // Vídeos
+        data.videos.forEach((videoId, vIdx) => {
+            mediaHTML +=
+                '<div class="media-item" style="background:#000;">' +
+                '<video src="" id="video-' + videoId + '" data-videoid="' + videoId + '" ' +
+                'onclick="event.stopPropagation();loadAndPlayVideo(\'' + videoId + '\')" ' +
+                'muted playsinline preload="none" style="width:100%;height:100%;object-fit:cover;cursor:pointer;"></video>' +
+                '<button class="media-remove" onclick="event.stopPropagation();removeVideo(\'' + catId + '\',' + idx + ',' + vIdx + ')">×</button>' +
+                '</div>';
+        });
+        // Fotos
         data.photos.forEach((photoId, pIdx) => {
             const placeholder = 'data:image/svg+xml,' + encodeURIComponent(
                 '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect fill="#334155" width="64" height="64"/><text x="32" y="40" text-anchor="middle" fill="#94a3b8" font-size="18">📷</text></svg>'
@@ -511,6 +577,7 @@ function renderItem(catId, idx, label) {
                 '<button class="media-remove" onclick="event.stopPropagation();removePhoto(\'' + catId + '\',' + idx + ',' + pIdx + ')">×</button>' +
                 '</div>';
         });
+        // Áudios
         data.audios.forEach((audioId, aIdx) => {
             mediaHTML +=
                 '<div class="media-item audio" onclick="event.stopPropagation();playAudio(\'' + audioId + '\')">' +
@@ -532,8 +599,9 @@ function renderItem(catId, idx, label) {
             '<div class="evidence ' + evidenceShow + '">' +
                 '<div class="evidence-title">📸 Adicionar evidências:</div>' +
                 '<div class="evidence-buttons">' +
-                    '<button class="ev-btn voice" onclick="captureAudio(\'' + catId + '\',' + idx + ')">🎤 Gravar Áudio</button>' +
-                    '<button class="ev-btn photo" onclick="capturePhoto(\'' + catId + '\',' + idx + ')">📷 Tirar Foto</button>' +
+                    '<button class="ev-btn photo" onclick="capturePhoto(\'' + catId + '\',' + idx + ')">📷 Foto</button>' +
+                    '<button class="ev-btn video" onclick="captureVideo(\'' + catId + '\',' + idx + ')">📹 Vídeo</button>' +
+                    '<button class="ev-btn voice" onclick="captureAudio(\'' + catId + '\',' + idx + ')">🎤 Áudio</button>' +
                 '</div>' +
                 mediaHTML +
             '</div>' +
@@ -564,6 +632,7 @@ function refreshItem(catId, idx) {
     if (oldEl) {
         oldEl.outerHTML = renderItem(catId, idx, label);
         loadItemImages(catId, idx);
+        loadItemVideos(catId, idx);
     }
 }
 
@@ -581,20 +650,48 @@ async function loadItemImages(catId, idx) {
     }
 }
 
+async function loadItemVideos(catId, idx) {
+    const data = ensureItem(catId, idx);
+    for (const videoId of data.videos) {
+        const videoEl = document.getElementById('video-' + videoId);
+        if (!videoEl) continue;
+        if (!videoEl.src || videoEl.src === window.location.href) {
+            try {
+                const dataUrl = await getMediaFromDB(videoId);
+                if (dataUrl) {
+                    videoEl.src = dataUrl;
+                    videoEl.load();
+                }
+            } catch (e) {}
+        }
+    }
+}
+
 async function loadMediaForSection(catId) {
     const cat = categories.find(c => c.id === catId);
     if (!cat) return;
     for (let idx = 0; idx < cat.items.length; idx++) {
         const data = ensureItem(catId, idx);
-        if (data.photos.length === 0) continue;
-        for (let p = 0; p < data.photos.length; p++) {
-            const photoId = data.photos[p];
+        for (const photoId of data.photos) {
             const imgEl = document.getElementById('img-' + photoId);
             if (!imgEl) continue;
             if (imgEl.src && imgEl.src.includes('svg+xml')) {
                 try {
                     const dataUrl = await getMediaFromDB(photoId);
                     if (dataUrl) imgEl.src = dataUrl;
+                } catch (e) {}
+            }
+        }
+        for (const videoId of data.videos) {
+            const videoEl = document.getElementById('video-' + videoId);
+            if (!videoEl) continue;
+            if (!videoEl.src || videoEl.src === window.location.href) {
+                try {
+                    const dataUrl = await getMediaFromDB(videoId);
+                    if (dataUrl) {
+                        videoEl.src = dataUrl;
+                        videoEl.load();
+                    }
                 } catch (e) {}
             }
         }
@@ -746,6 +843,81 @@ async function loadAndShowPhoto(photoId) {
     }
 }
 
+// ============ CAPTURA DE VÍDEO ============
+function captureVideo(catId, idx) {
+    currentVideoTarget = { catId, idx };
+    document.getElementById('videoInput').click();
+}
+
+async function handleVideoSelected(e) {
+    const file = e.target.files[0];
+    if (!file || !currentVideoTarget) return;
+
+    const fileSizeMB = file.size / (1024 * 1024);
+    showToast('⏳ Processando vídeo (' + Math.round(fileSizeMB) + 'MB)...');
+
+    try {
+        const compressed = await compressVideo(file, 20);
+        if (!compressed) {
+            showToast('❌ Erro ao processar vídeo');
+            currentVideoTarget = null;
+            e.target.value = '';
+            return;
+        }
+
+        const videoId = 'video-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        loadedImages[videoId] = compressed;
+        await saveMediaToDB(videoId, compressed);
+
+        const data = ensureItem(currentVideoTarget.catId, currentVideoTarget.idx);
+        data.videos.push(videoId);
+        refreshItem(currentVideoTarget.catId, currentVideoTarget.idx);
+        saveData();
+        showToast('📹 Vídeo salvo!');
+        currentVideoTarget = null;
+    } catch (err) {
+        console.error('Erro ao salvar vídeo:', err);
+        showToast('❌ Erro ao salvar vídeo');
+        currentVideoTarget = null;
+    }
+    e.target.value = '';
+}
+
+async function loadAndPlayVideo(videoId) {
+    const dataUrl = await getMediaFromDB(videoId);
+    if (dataUrl) {
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(
+                '<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;}' +
+                'video{max-width:100%;max-height:100vh;display:block;}</style></head><body>' +
+                '<video controls autoplay playsinline src="' + dataUrl + '"></video></body></html>'
+            );
+        } else {
+            // Fallback: tenta carregar no elemento da página
+            const videoEl = document.getElementById('video-' + videoId);
+            if (videoEl && (!videoEl.src || videoEl.src === window.location.href)) {
+                videoEl.src = dataUrl;
+                videoEl.load();
+                videoEl.play();
+            }
+            showToast('📹 Tocando vídeo');
+        }
+    } else {
+        showToast('❌ Vídeo não encontrado');
+    }
+}
+
+async function removeVideo(catId, idx, videoIdx) {
+    const data = ensureItem(catId, idx);
+    const videoId = data.videos[videoIdx];
+    await deleteMediaFromDB(videoId);
+    data.videos.splice(videoIdx, 1);
+    refreshItem(catId, idx);
+    saveData();
+    showToast('🗑️ Vídeo removido');
+}
+
 // ============ OBSERVAÇÕES ============
 function openObsModal() {
     document.getElementById('obsText').value = generalObs;
@@ -781,52 +953,43 @@ async function generateReport() {
 
         showToast('📦 Carregando evidências...');
 
-        // Coleta todas as mídias necessárias
         const mediaCache = {};
-        const allPhotoIds = [];
-        const allAudioIds = [];
+        const allMediaIds = [];
 
         for (const c of categories) {
             for (let idx = 0; idx < c.items.length; idx++) {
                 const itemData = ensureItem(c.id, idx);
                 for (const photoId of itemData.photos) {
-                    if (!mediaCache[photoId]) allPhotoIds.push(photoId);
+                    if (!mediaCache[photoId]) allMediaIds.push(photoId);
                 }
                 for (const audioId of itemData.audios) {
-                    if (!mediaCache[audioId]) allAudioIds.push(audioId);
+                    if (!mediaCache[audioId]) allMediaIds.push(audioId);
+                }
+                for (const videoId of itemData.videos) {
+                    if (!mediaCache[videoId]) allMediaIds.push(videoId);
                 }
             }
         }
 
-        // Carrega em lotes para não travar
-        for (let i = 0; i < allPhotoIds.length; i++) {
-            const id = allPhotoIds[i];
+        for (let i = 0; i < allMediaIds.length; i++) {
+            const id = allMediaIds[i];
             if (!mediaCache[id]) {
                 const dataUrl = await getMediaFromDB(id);
                 if (dataUrl) mediaCache[id] = dataUrl;
             }
-            if (i % 5 === 4) await new Promise(r => setTimeout(r, 30));
-        }
-        for (let i = 0; i < allAudioIds.length; i++) {
-            const id = allAudioIds[i];
-            if (!mediaCache[id]) {
-                const dataUrl = await getMediaFromDB(id);
-                if (dataUrl) mediaCache[id] = dataUrl;
-            }
+            if (i % 3 === 2) await new Promise(r => setTimeout(r, 30));
         }
 
-        // ========== MONTA O HTML DO RELATÓRIO ==========
-        let totalPhotos = 0, totalAudios = 0;
+        // Monta o HTML do relatório
+        let totalPhotos = 0, totalAudios = 0, totalVideos = 0;
         let reportHTML = '<div class="report-wrap">';
 
-        // Cabeçalho
         reportHTML +=
             '<div class="rp-header">' +
                 '<h2>📋 RELATÓRIO DE CHECKLIST</h2>' +
                 '<p>Mecânica Brasil — ' + data + ' às ' + hora + '</p>' +
             '</div>';
 
-        // Dados do veículo
         reportHTML +=
             '<div class="rp-info">' +
                 '<div class="rp-info-row"><span>Cliente</span><span>' + cliente + '</span></div>' +
@@ -835,13 +998,11 @@ async function generateReport() {
                 '<div class="rp-info-row"><span>KM</span><span>' + km + '</span></div>' +
             '</div>';
 
-        // Categorias e itens
         for (const c of categories) {
-            // Pula categorias sem nenhum item preenchido
             let hasAnyStatus = false;
             for (let idx = 0; idx < c.items.length; idx++) {
                 const itemData = ensureItem(c.id, idx);
-                if (itemData.status || itemData.photos.length > 0 || itemData.audios.length > 0) {
+                if (itemData.status || itemData.photos.length > 0 || itemData.audios.length > 0 || itemData.videos.length > 0) {
                     hasAnyStatus = true;
                     break;
                 }
@@ -854,7 +1015,7 @@ async function generateReport() {
             for (let idx = 0; idx < c.items.length; idx++) {
                 const item = c.items[idx];
                 const itemData = ensureItem(c.id, idx);
-                if (!itemData.status && itemData.photos.length === 0 && itemData.audios.length === 0) continue;
+                if (!itemData.status && itemData.photos.length === 0 && itemData.audios.length === 0 && itemData.videos.length === 0) continue;
 
                 let icon = '';
                 if (itemData.status === 'ok') icon = '✅';
@@ -865,16 +1026,40 @@ async function generateReport() {
                 reportHTML += '<span class="rp-item-icon">' + icon + '</span>';
                 reportHTML += '<span>' + item + '</span></div>';
 
-                // Fotos e áudios
-                if (itemData.photos.length > 0 || itemData.audios.length > 0) {
+                if (itemData.photos.length > 0 || itemData.audios.length > 0 || itemData.videos.length > 0) {
                     reportHTML += '<div class="rp-media-grid">';
+                    // Fotos
                     for (const photoId of itemData.photos) {
                         const dataUrl = mediaCache[photoId];
                         if (dataUrl) {
-                            reportHTML += '<img src="' + dataUrl + '" class="rp-photo" alt="Foto - ' + item + '" onclick="this.requestFullscreen?this.requestFullscreen():window.open(this.src)">';
+                            const safeId = photoId.replace(/[^a-zA-Z0-9]/g, '_');
+                            reportHTML += '<div style="position:relative;">';
+                            reportHTML += '<img src="' + dataUrl + '" class="rp-photo" alt="Foto - ' + item + '" ' +
+                                'id="rp-photo-' + safeId + '" ' +
+                                'onclick="this.requestFullscreen?this.requestFullscreen():window.open(this.src)" ' +
+                                'onerror="this.onerror=null;this.style.display=\'none\'">';
+                            reportHTML += '<a class="rp-download-btn" href="' + dataUrl + '" download="foto_' + safeId + '.jpg" ' +
+                                'onclick="event.stopPropagation();" ' +
+                                'style="display:block;text-align:center;margin-top:4px;">💾 Baixar</a>';
+                            reportHTML += '</div>';
                             totalPhotos++;
                         }
                     }
+                    // Vídeos
+                    for (const videoId of itemData.videos) {
+                        const dataUrl = mediaCache[videoId];
+                        if (dataUrl) {
+                            const safeId = videoId.replace(/[^a-zA-Z0-9]/g, '_');
+                            reportHTML += '<div class="rp-video-wrap">';
+                            reportHTML += '<div class="rp-video-label">📹 Vídeo - ' + item + '</div>';
+                            reportHTML += '<video class="rp-video" controls preload="metadata" src="' + dataUrl + '"></video>';
+                            reportHTML += '<a class="rp-download-btn" href="' + dataUrl + '" download="video_' + safeId + '.mp4" ' +
+                                'style="display:inline-block;margin-top:6px;">💾 Baixar vídeo</a>';
+                            reportHTML += '</div>';
+                            totalVideos++;
+                        }
+                    }
+                    // Áudios
                     for (const audioId of itemData.audios) {
                         const dataUrl = mediaCache[audioId];
                         if (dataUrl) {
@@ -895,7 +1080,6 @@ async function generateReport() {
             reportHTML += '</div>';
         }
 
-        // Resumo
         const classLabel = generalClassification === 'green' ? '🟢 Bom' :
                            generalClassification === 'yellow' ? '🟡 Requer Atenção' :
                            generalClassification === 'red' ? '🔴 Crítico' : '—';
@@ -904,6 +1088,7 @@ async function generateReport() {
             '<div class="rp-info">' +
                 '<div class="rp-info-row"><span>Classificação</span><span>' + classLabel + '</span></div>' +
                 '<div class="rp-info-row"><span>📷 Fotos no relatório</span><span>' + totalPhotos + '</span></div>' +
+                '<div class="rp-info-row"><span>📹 Vídeos no relatório</span><span>' + totalVideos + '</span></div>' +
                 '<div class="rp-info-row"><span>🎤 Áudios no relatório</span><span>' + totalAudios + '</span></div>' +
             '</div>';
 
@@ -916,12 +1101,11 @@ async function generateReport() {
         }
 
         reportHTML += '<div class="rp-footer">Mecânica Brasil © ' + new Date().getFullYear() + '</div>';
-        reportHTML += '</div>'; // fecha .report-wrap
+        reportHTML += '</div>';
 
-        // ========== BOTÕES DE AÇÃO ==========
         const actionsHTML =
             '<div class="report-actions">' +
-                '<button class="btn btn-whatsapp" onclick="shareViaWhatsApp()" style="background:#25D366;color:#fff;">' +
+                '<button class="btn btn-whatsapp" onclick="previewWhatsApp()" style="background:#25D366;color:#fff;">' +
                     '📱 Compartilhar via WhatsApp' +
                 '</button>' +
                 '<button class="btn btn-primary" onclick="shareReportAsFile()">' +
@@ -942,9 +1126,8 @@ async function generateReport() {
         document.getElementById('reportModal').classList.add('show');
         document.body.classList.add('no-scroll');
 
-        // Guarda os dados para uso nos botões
         window._reportMediaCache = mediaCache;
-        window._reportData = { cliente, veiculo, placa, km, data, hora, totalPhotos, totalAudios };
+        window._reportData = { cliente, veiculo, placa, km, data, hora, totalPhotos, totalVideos, totalAudios };
         window._reportHTMLBody = reportHTML;
 
         showToast('✅ Relatório gerado!');
@@ -957,22 +1140,11 @@ async function generateReport() {
     }
 }
 
-// ========== COMPARTILHAR VIA WHATSAPP ==========
-async function shareViaWhatsApp() {
+// ========== PREVIEW WHATSAPP (NOVO) ==========
+function previewWhatsApp() {
     const dados = window._reportData;
     if (!dados) { showToast('❌ Gere o relatório primeiro'); return; }
 
-    // Monta texto resumido
-    let texto = '*📋 Checklist Mecânica Brasil*\n';
-    texto += '━━━━━━━━━━━━━━━━\n';
-    texto += '👤 *Cliente:* ' + dados.cliente + '\n';
-    texto += '🚗 *Veículo:* ' + dados.veiculo + '\n';
-    texto += '🔢 *Placa:* ' + dados.placa + '\n';
-    texto += '📏 *KM:* ' + dados.km + '\n';
-    texto += '📅 *Data:* ' + dados.data + ' às ' + dados.hora + '\n';
-    texto += '━━━━━━━━━━━━━━━━\n';
-
-    // Resumo dos itens
     let totalOk = 0, totalRepair = 0, totalCritical = 0;
     for (const c of categories) {
         for (let idx = 0; idx < c.items.length; idx++) {
@@ -982,16 +1154,25 @@ async function shareViaWhatsApp() {
             else if (itemData.status === 'critical') totalCritical++;
         }
     }
-    texto += '✅ Itens OK: ' + totalOk + '\n';
-    texto += '🔧 Precisam de reparo: ' + totalRepair + '\n';
-    texto += '⚠️ Críticos: ' + totalCritical + '\n';
-    texto += '━━━━━━━━━━━━━━━━\n';
 
     const classLabel = generalClassification === 'green' ? '🟢 Bom' :
                        generalClassification === 'yellow' ? '🟡 Requer Atenção' :
                        generalClassification === 'red' ? '🔴 Crítico' : '—';
+
+    let texto = '*📋 Checklist Mecânica Brasil*\n';
+    texto += '━━━━━━━━━━━━━━━━\n';
+    texto += '👤 *Cliente:* ' + dados.cliente + '\n';
+    texto += '🚗 *Veículo:* ' + dados.veiculo + '\n';
+    texto += '🔢 *Placa:* ' + dados.placa + '\n';
+    texto += '📏 *KM:* ' + dados.km + '\n';
+    texto += '📅 *Data:* ' + dados.data + ' às ' + dados.hora + '\n';
+    texto += '━━━━━━━━━━━━━━━━\n';
+    texto += '✅ Itens OK: ' + totalOk + '\n';
+    texto += '🔧 Precisam de reparo: ' + totalRepair + '\n';
+    texto += '⚠️ Críticos: ' + totalCritical + '\n';
+    texto += '━━━━━━━━━━━━━━━━\n';
     texto += '🏁 *Classificação:* ' + classLabel + '\n';
-    texto += '📷 Fotos: ' + dados.totalPhotos + ' | 🎤 Áudios: ' + dados.totalAudios + '\n';
+    texto += '📷 Fotos: ' + dados.totalPhotos + ' | 📹 Vídeos: ' + dados.totalVideos + ' | 🎤 Áudios: ' + dados.totalAudios + '\n';
 
     if (generalObs) {
         texto += '━━━━━━━━━━━━━━━━\n';
@@ -999,29 +1180,48 @@ async function shareViaWhatsApp() {
     }
 
     texto += '━━━━━━━━━━━━━━━━\n';
-    texto += '💡 _Para ver as fotos e áudios, peça o arquivo .html completo._';
+    texto += '💡 _Para ver as mídias, peça o arquivo .html completo._';
 
-    // Tenta abrir WhatsApp
+    // Salva texto para uso
+    window._whatsappText = texto;
+
+    // Mostra preview
+    const previewHTML =
+        '<h2>📱 Preview WhatsApp</h2>' +
+        '<div style="color:#94a3b8;font-size:11px;margin-bottom:8px;">Confira o resumo antes de enviar:</div>' +
+        '<div class="whatsapp-preview">' + texto.replace(/\*/g, '').replace(/\n/g, '<br>') + '</div>' +
+        '<div style="display:flex;gap:6px;margin-top:12px;">' +
+            '<button class="btn btn-whatsapp" onclick="sendToWhatsApp()" style="background:#25D366;color:#fff;flex:1;">📱 Enviar</button>' +
+            '<button class="btn btn-secondary" onclick="copyWhatsAppText()" style="flex:1;">📋 Copiar</button>' +
+        '</div>' +
+        '<button class="btn btn-secondary" onclick="closeModal(\'whatsappPreviewModal\')" style="width:100%;margin-top:6px;">Voltar</button>';
+
+    document.getElementById('whatsappPreviewContent').innerHTML = previewHTML;
+    document.getElementById('whatsappPreviewModal').classList.add('show');
+    document.body.classList.add('no-scroll');
+}
+
+function sendToWhatsApp() {
+    const texto = window._whatsappText;
+    if (!texto) return;
     const url = 'https://wa.me/?text=' + encodeURIComponent(texto);
     const win = window.open(url, '_blank');
-
     if (!win) {
-        // Fallback: copia o texto
-        try {
-            await navigator.clipboard.writeText(texto);
-            showToast('📋 Texto copiado! Cole no WhatsApp');
-        } catch (e) {
-            showToast('⚠️ Abra o WhatsApp e cole o texto');
-            // Mostra o texto em um modal para copiar manualmente
-            document.getElementById('reportContent').innerHTML =
-                '<div class="report-wrap">' +
-                    '<h2 style="margin-bottom:12px;">📋 Resumo para WhatsApp</h2>' +
-                    '<div class="rp-info" style="white-space:pre-wrap;font-size:12px;">' + texto.replace(/\*/g, '') + '</div>' +
-                    '<button class="btn btn-primary" onclick="navigator.clipboard.writeText(\'' + texto.replace(/'/g, "\\'") + '\').then(()=>showToast(\'📋 Copiado!\')).catch(()=>showToast(\'⚠️ Selecione e copie o texto\'))" style="width:100%;margin-top:10px;">📋 Copiar Texto</button>' +
-                    '<button class="btn btn-secondary" onclick="closeModal(\'reportModal\')" style="width:100%;margin-top:6px;">Fechar</button>' +
-                '</div>';
-        }
+        copyWhatsAppText();
+        showToast('⚠️ Pop-up bloqueado. Texto copiado!');
     }
+    closeModal('whatsappPreviewModal');
+}
+
+function copyWhatsAppText() {
+    const texto = window._whatsappText;
+    if (!texto) return;
+    navigator.clipboard.writeText(texto.replace(/\*/g, '')).then(() => {
+        showToast('📋 Texto copiado! Cole no WhatsApp');
+    }).catch(() => {
+        showToast('⚠️ Selecione e copie o texto manualmente');
+    });
+    closeModal('whatsappPreviewModal');
 }
 
 // ========== COMPARTILHAR COMO ARQUIVO .HTML ==========
@@ -1032,32 +1232,27 @@ async function shareReportAsFile() {
 
     try {
         showToast('📦 Preparando arquivo...');
-
         const fullHTML = buildFullReportHTML(htmlBody, dados);
         const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
         const fileName = 'checklist_' + (dados.cliente || 'cliente').replace(/\s+/g, '_') + '_' + (dados.placa || 'placa').replace(/\s+/g, '_') + '.html';
         const file = new File([blob], fileName, { type: 'text/html' });
 
-        // Tenta compartilhar como arquivo (funciona no Android, Chrome, Edge)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
                 title: 'Checklist ' + dados.cliente + ' - ' + dados.placa,
-                text: '📋 Relatório de checklist com ' + dados.totalPhotos + ' foto(s) e ' + dados.totalAudios + ' áudio(s)',
+                text: '📋 Relatório de checklist com ' + dados.totalPhotos + ' foto(s), ' + dados.totalVideos + ' vídeo(s) e ' + dados.totalAudios + ' áudio(s)',
                 files: [file]
             });
             showToast('✅ Compartilhado!');
             return;
         }
 
-        // Tenta compartilhar via Web Share API (texto + URL)
         if (navigator.share) {
-            // Como não dá pra compartilhar arquivo, baixa e avisa
             downloadReportHTML();
             showToast('⚠️ Arquivo baixado. Compartilhe manualmente!');
             return;
         }
 
-        // Fallback final: download
         downloadReportHTML();
         showToast('💾 Relatório baixado!');
     } catch (err) {
@@ -1069,7 +1264,6 @@ async function shareReportAsFile() {
     }
 }
 
-// ========== DOWNLOAD DO HTML COMPLETO ==========
 function downloadReportHTML() {
     const htmlBody = window._reportHTMLBody;
     const dados = window._reportData;
@@ -1089,7 +1283,6 @@ function downloadReportHTML() {
     showToast('💾 Relatório baixado!');
 }
 
-// ========== CONSTRÓI O HTML COMPLETO DO RELATÓRIO ==========
 function buildFullReportHTML(bodyHTML, dados) {
     return '<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n' +
         '<meta charset="UTF-8">\n' +
@@ -1111,13 +1304,18 @@ function buildFullReportHTML(bodyHTML, dados) {
         '.rp-category h3{font-size:15px;color:#e11d48;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}\n' +
         '.rp-item{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;align-items:center}\n' +
         '.rp-item-icon{font-size:14px;flex-shrink:0}\n' +
-        '.rp-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:10px 0 10px 22px;padding:12px;background:#f8fafc;border-radius:8px;border-left:3px solid #e11d48}\n' +
+        '.rp-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:10px 0 10px 22px;padding:12px;background:#f8fafc;border-radius:8px;border-left:3px solid #e11d48}\n' +
         '.rp-photo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer;display:block;transition:transform .2s}\n' +
         '.rp-photo:hover{transform:scale(1.02)}\n' +
+        '.rp-video-wrap{grid-column:1/-1;background:#fef2f2;border-radius:8px;padding:12px;border:1px solid #fecaca}\n' +
+        '.rp-video-label{font-size:12px;color:#dc2626;margin-bottom:6px;font-weight:600}\n' +
+        '.rp-video{width:100%;max-height:350px;border-radius:6px;border:1px solid #cbd5e1;background:#000}\n' +
         '.rp-audio-wrap{grid-column:1/-1;background:#eff6ff;border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;border:1px solid #bfdbfe}\n' +
         '.rp-audio-icon{width:42px;height:42px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:#fff}\n' +
         '.rp-audio-label{font-size:11px;color:#64748b;margin-bottom:3px}\n' +
         '.rp-audio-wrap audio{width:100%;height:34px}\n' +
+        '.rp-download-btn{display:inline-block;margin-top:4px;padding:5px 12px;background:#334155;color:#fff;border:none;border-radius:6px;font-size:10px;cursor:pointer;text-decoration:none;font-weight:600}\n' +
+        '.rp-download-btn:hover{background:#475569}\n' +
         '.rp-footer{text-align:center;color:#94a3b8;font-size:10px;margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0}\n' +
         '@media print{body{padding:10mm}.rp-category{page-break-inside:avoid}}\n' +
         '@page{margin:15mm}\n' +
@@ -1128,7 +1326,6 @@ function buildFullReportHTML(bodyHTML, dados) {
         '</' + 'script>\n</body>\n</html>';
 }
 
-// ========== IMPRIMIR ==========
 function printReport() {
     const htmlBody = window._reportHTMLBody;
     const dados = window._reportData;
@@ -1160,10 +1357,11 @@ async function loadData() {
             Object.keys(checklistData).forEach(key => {
                 const item = checklistData[key];
                 if (!item || typeof item !== 'object') {
-                    checklistData[key] = { status: null, photos: [], audios: [] };
+                    checklistData[key] = { status: null, photos: [], audios: [], videos: [] };
                 } else {
                     if (!Array.isArray(item.photos)) item.photos = [];
                     if (!Array.isArray(item.audios)) item.audios = [];
+                    if (!Array.isArray(item.videos)) item.videos = [];
                 }
             });
         }
@@ -1176,7 +1374,7 @@ async function loadData() {
 }
 
 function resetAllData() {
-    if (!confirm('⚠️ Isso apagará TODOS os dados do checklist (fotos, áudios, preenchimentos). Continuar?')) return;
+    if (!confirm('⚠️ Isso apagará TODOS os dados do checklist (fotos, vídeos, áudios, preenchimentos). Continuar?')) return;
     showToast('🔄 Limpando dados...');
     loadedImages = {};
     try {
@@ -1247,6 +1445,7 @@ async function init() {
     try {
         document.getElementById('photoInput').addEventListener('change', handlePhotoSelected);
         document.getElementById('audioInput').addEventListener('change', handleAudioSelected);
+        document.getElementById('videoInput').addEventListener('change', handleVideoSelected);
     } catch (e) {}
     try {
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
