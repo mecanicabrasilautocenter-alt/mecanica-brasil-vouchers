@@ -1,1263 +1,1371 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checklist - Mecânica Brasil</title>
-    <style>
-        :root {
-            --bg: #f1f5f9;
-            --card: #ffffff;
-            --text: #1e293b;
-            --muted: #64748b;
-            --border: #e2e8f0;
-            --green: #22c55e;
-            --yellow: #eab308;
-            --red: #ef4444;
-            --blue: #3b82f6;
-            --whatsapp: #25D366;
-            --radius: 12px;
-            --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.5;
-            padding-bottom: 40px;
-        }
-        .container { max-width: 720px; margin: 0 auto; padding: 12px 16px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MB Checklist">
+<meta name="theme-color" content="#0f172a">
+<meta name="format-detection" content="telephone=no">
+<title>MB Checklist</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    -webkit-overflow-scrolling: touch;
+}
+html { height: -webkit-fill-available; }
+body { padding-bottom: 100px; padding-top: env(safe-area-inset-top); }
+body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
 
-        /* Header */
-        .header {
-            background: linear-gradient(135deg, #1e3a5f 0%, #0f2440 100%);
-            color: #fff;
-            padding: 18px 16px;
-            text-align: center;
-            border-radius: 0 0 var(--radius) var(--radius);
-            margin-bottom: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,.15);
-        }
-        .header h1 { font-size: 22px; letter-spacing: -.3px; }
-        .header span { font-size: 13px; opacity: .75; }
+.header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    padding: 12px 16px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    border-bottom: 2px solid #e11d48;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+.header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.logo {
+    width: 40px; height: 40px; background: #e11d48; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 14px; color: #fff; flex-shrink: 0;
+}
+.header h1 { font-size: 16px; font-weight: 700; line-height: 1.2; }
+.header .sub { font-size: 11px; color: #94a3b8; }
 
-        /* Cards */
-        .card {
-            background: var(--card);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 16px;
-            margin-bottom: 14px;
-            border: 1px solid var(--border);
-        }
-        .card h2 {
-            font-size: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #1e3a5f;
-        }
-        .card h3 {
-            font-size: 14px;
-            margin-bottom: 10px;
-            color: #334155;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-        }
+.header-actions { display: flex; gap: 6px; margin-left: auto; }
+.btn-reset {
+    background: #334155; border: 1px solid #475569; border-radius: 8px;
+    color: #94a3b8; font-size: 11px; padding: 8px 12px; cursor: pointer;
+    white-space: nowrap; -webkit-appearance: none; touch-action: manipulation;
+}
+.btn-reset:active { background: #ef4444; color: #fff; border-color: #ef4444; }
 
-        /* Form */
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .form-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
-        .form-group { display: flex; flex-direction: column; gap: 4px; }
-        .form-group label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; }
-        .form-group input {
-            padding: 10px 12px;
-            border: 1.5px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color .2s;
-            background: #f8fafc;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--blue);
-            box-shadow: 0 0 0 3px rgba(59,130,246,.1);
-            background: #fff;
-        }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.info-grid input {
+    background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+    padding: 10px 12px; color: #fff; font-size: 14px; width: 100%;
+    outline: none; -webkit-appearance: none; appearance: none;
+}
+.info-grid input:focus { border-color: #e11d48; }
+.info-grid input::placeholder { color: #64748b; }
 
-        /* Itens do checklist */
-        .category-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            padding: 10px 12px;
-            background: #f8fafc;
-            border-radius: 8px;
-            margin-bottom: 6px;
-            border: 1px solid var(--border);
-            transition: background .2s;
-        }
-        .category-header:hover { background: #f1f5f9; }
-        .category-header .arrow { transition: transform .2s; font-size: 12px; }
-        .category-header.open .arrow { transform: rotate(180deg); }
+.progress-wrap {
+    padding: 8px 16px; background: #0f172a;
+    display: flex; align-items: center; gap: 10px;
+}
+.progress-bar { flex: 1; height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #e11d48, #f97316); transition: width .3s; width: 0%; }
+.progress-text { font-size: 11px; font-weight: 700; color: #94a3b8; min-width: 50px; text-align: right; }
 
-        .items-container { display: none; padding: 4px 0 10px 0; }
-        .items-container.show { display: block; }
+.tabs {
+    display: flex; gap: 5px; padding: 6px 10px; overflow-x: auto;
+    scrollbar-width: none; background: #0f172a;
+    border-bottom: 1px solid #1e293b;
+    -webkit-overflow-scrolling: touch;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+    flex-shrink: 0; padding: 8px 12px; border-radius: 20px;
+    font-size: 12px; font-weight: 600; border: 1px solid #334155;
+    background: #1e293b; color: #94a3b8; cursor: pointer;
+    white-space: nowrap; transition: all .2s; -webkit-appearance: none;
+    touch-action: manipulation;
+}
+.tab.active { background: #e11d48; border-color: #e11d48; color: #fff; }
 
-        .checklist-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-bottom: 1px solid #f1f5f9;
-            flex-wrap: wrap;
-        }
-        .checklist-item:last-child { border-bottom: none; }
-        .item-label {
-            flex: 1;
-            min-width: 140px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        .status-btns {
-            display: flex;
-            gap: 4px;
-            flex-shrink: 0;
-        }
-        .status-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border: 2px solid transparent;
-            cursor: pointer;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f1f5f9;
-            transition: all .2s;
-        }
-        .status-btn:hover { transform: scale(1.1); }
-        .status-btn.ok { color: var(--green); }
-        .status-btn.ok.active { background: #dcfce7; border-color: var(--green); }
-        .status-btn.repair { color: var(--yellow); }
-        .status-btn.repair.active { background: #fef9c3; border-color: var(--yellow); }
-        .status-btn.critical { color: var(--red); }
-        .status-btn.critical.active { background: #fee2e2; border-color: var(--red); }
+.content { padding: 10px 12px; }
+.section { display: none; }
+.section.active { display: block; }
+.section-title {
+    font-size: 15px; font-weight: 700; margin: 6px 0 10px;
+    padding: 8px 12px; background: #1e293b; border-radius: 10px;
+    display: flex; align-items: center; gap: 8px;
+}
 
-        .item-obs {
-            width: 100%;
-            margin-top: 6px;
-            padding: 6px 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 12px;
-            background: #fafafa;
-        }
-        .item-media {
-            display: flex;
-            gap: 6px;
-            margin-top: 6px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .media-btn {
-            font-size: 11px;
-            padding: 6px 10px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            background: #fff;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            transition: all .2s;
-            color: var(--muted);
-        }
-        .media-btn:hover { background: #f1f5f9; }
-        .media-thumb {
-            width: 48px;
-            height: 48px;
-            border-radius: 6px;
-            object-fit: cover;
-            border: 1px solid var(--border);
-            cursor: pointer;
-        }
-        .media-thumb.audio-thumb {
-            background: #ede9fe;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            width: 48px;
-            height: 48px;
-        }
+.item {
+    background: #1e293b; border-radius: 12px; margin-bottom: 8px;
+    padding: 12px; border: 1px solid #334155; transition: border-color .2s;
+}
+.item.status-ok { border-color: #10b981; background: rgba(6, 78, 59, 0.2); }
+.item.status-repair { border-color: #f59e0b; background: rgba(120, 53, 15, 0.2); }
+.item.status-critical { border-color: #ef4444; background: rgba(127, 29, 29, 0.2); }
 
-        /* Botões gerais */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all .2s;
-            text-decoration: none;
-        }
-        .btn:active { transform: scale(.97); }
-        .btn-primary { background: var(--blue); color: #fff; width: 100%; }
-        .btn-primary:hover { background: #2563eb; }
-        .btn-whatsapp { background: var(--whatsapp); color: #fff; }
-        .btn-whatsapp:hover { background: #1ebe5d; }
-        .btn-secondary { background: #e2e8f0; color: #1e293b; }
-        .btn-secondary:hover { background: #cbd5e1; }
-        .btn-danger { background: #fee2e2; color: #dc2626; }
-        .btn-danger:hover { background: #fecaca; }
-        .btn-sm { padding: 6px 12px; font-size: 12px; }
-        .btn-icon { width: 36px; height: 36px; padding: 0; border-radius: 50%; }
+.item-label { font-size: 13px; font-weight: 500; margin-bottom: 8px; line-height: 1.4; }
+.status-buttons { display: flex; gap: 5px; margin-bottom: 6px; }
+.status-btn {
+    flex: 1; padding: 10px 4px; border-radius: 8px;
+    border: 2px solid #334155; background: #0f172a;
+    color: #94a3b8; font-size: 11px; font-weight: 700;
+    cursor: pointer; transition: all .2s; text-align: center;
+    -webkit-appearance: none; touch-action: manipulation;
+}
+.status-btn.ok.active { background: #10b981; border-color: #10b981; color: #fff; }
+.status-btn.repair.active { background: #f59e0b; border-color: #f59e0b; color: #000; }
+.status-btn.critical.active { background: #ef4444; border-color: #ef4444; color: #fff; }
 
-        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
-        .btn-row .btn { flex: 1; min-width: 100px; }
+.evidence { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #334155; }
+.evidence.show { display: block; }
+.evidence-title { font-size: 11px; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
+.evidence-buttons { display: flex; gap: 6px; margin-bottom: 6px; }
+.ev-btn {
+    flex: 1; padding: 10px; border-radius: 8px; border: none;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    gap: 5px; transition: all .2s; -webkit-appearance: none;
+    touch-action: manipulation;
+}
+.ev-btn:active { transform: scale(.95); }
+.ev-btn.voice { background: #3b82f6; color: #fff; }
+.ev-btn.photo { background: #8b5cf6; color: #fff; }
+.ev-btn.video { background: #dc2626; color: #fff; }
 
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e293b;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-size: 14px;
-            z-index: 9999;
-            opacity: 0;
-            transition: opacity .3s;
-            pointer-events: none;
-            box-shadow: 0 8px 24px rgba(0,0,0,.2);
-        }
-        .toast.show { opacity: 1; }
+.evidence-media { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.media-item {
+    position: relative; width: 64px; height: 64px;
+    border-radius: 8px; overflow: hidden; border: 2px solid #334155;
+}
+.media-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media-item.audio {
+    background: #1e40af; display: flex; align-items: center;
+    justify-content: center; font-size: 22px; cursor: pointer;
+}
+.media-remove {
+    position: absolute; top: 1px; right: 1px;
+    width: 18px; height: 18px; background: #ef4444;
+    color: #fff; border: none; border-radius: 50%;
+    font-size: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    -webkit-appearance: none; touch-action: manipulation;
+    line-height: 1;
+}
 
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.5);
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-        .modal-overlay.show {
-            display: flex;
-        }
-        .modal {
-            background: #fff;
-            border-radius: var(--radius);
-            width: 100%;
-            max-width: 600px;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,.2);
-        }
-        .modal-header {
-            padding: 14px 18px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            background: #fff;
-            z-index: 1;
-            border-radius: var(--radius) var(--radius) 0 0;
-        }
-        .modal-header h2 { font-size: 17px; }
-        .modal-close {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: none;
-            background: #f1f5f9;
-            cursor: pointer;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-close:hover { background: #e2e8f0; }
-        .modal-body { padding: 16px 18px; }
-        .modal-footer {
-            padding: 14px 18px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            position: sticky;
-            bottom: 0;
-            background: #fff;
-            border-radius: 0 0 var(--radius) var(--radius);
-        }
+.bottom-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #1e293b; padding: 10px 14px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    display: flex; gap: 8px; border-top: 1px solid #334155; z-index: 50;
+}
+.btn {
+    flex: 1; padding: 14px; border-radius: 10px; border: none;
+    font-weight: 700; font-size: 14px; cursor: pointer;
+    transition: all .2s; -webkit-appearance: none;
+    touch-action: manipulation;
+}
+.btn:active { transform: scale(.96); }
+.btn-secondary { background: #334155; color: #fff; }
+.btn-primary { background: #e11d48; color: #fff; }
+.btn:disabled { opacity: .5; pointer-events: none; }
 
-        /* Relatório */
-        .report-preview {
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 14px;
-            white-space: pre-wrap;
-            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            max-height: 400px;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-        }
-        .classification-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-        .classification-badge.green { background: #dcfce7; color: #166534; }
-        .classification-badge.yellow { background: #fef9c3; color: #854d0e; }
-        .classification-badge.red { background: #fee2e2; color: #991b1b; }
+.modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.85);
+    z-index: 100; display: none; align-items: flex-end; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+    background: #1e293b; border-radius: 20px 20px 0 0;
+    padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    width: 100%; max-width: 500px; max-height: 85vh;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.modal h2 { font-size: 17px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.modal textarea {
+    width: 100%; background: #0f172a; border: 1px solid #334155;
+    border-radius: 10px; color: #fff; padding: 12px; font-size: 14px;
+    min-height: 100px; resize: vertical; outline: none; font-family: inherit;
+    -webkit-appearance: none;
+}
+.modal textarea:focus { border-color: #e11d48; }
+.modal .btn { margin-top: 8px; width: 100%; }
 
-        .no-scroll { overflow: hidden; }
+.toast {
+    position: fixed; top: calc(16px + env(safe-area-inset-top));
+    left: 50%; transform: translateX(-50%);
+    background: #10b981; color: #fff; padding: 10px 22px;
+    border-radius: 30px; font-weight: 700; font-size: 13px;
+    z-index: 200; display: none; pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    max-width: 90%; text-align: center;
+}
+.toast.show { display: block; animation: toastIn .3s; }
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
 
-        /* Responsivo */
-        @media (max-width: 480px) {
-            .form-row, .form-row.col3 { grid-template-columns: 1fr; }
-            .checklist-item { flex-direction: column; align-items: flex-start; }
-            .status-btns { align-self: flex-end; }
-        }
+.classification-section { margin-top: 14px; padding: 14px; background: #1e293b; border-radius: 12px; }
+.classification-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.classification-buttons { display: flex; gap: 6px; }
+.class-btn {
+    flex: 1; padding: 12px 6px; border-radius: 10px;
+    border: 2px solid #334155; background: #0f172a;
+    color: #94a3b8; font-weight: 700; font-size: 11px;
+    cursor: pointer; text-align: center; transition: all .2s;
+    -webkit-appearance: none; touch-action: manipulation;
+}
+.class-btn.active-green { background: #10b981; border-color: #10b981; color: #fff; }
+.class-btn.active-yellow { background: #f59e0b; border-color: #f59e0b; color: #000; }
+.class-btn.active-red { background: #ef4444; border-color: #ef4444; color: #fff; }
 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 20px; }
-
-        /* Animação de spinner */
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .spinner {
-            width: 18px;
-            height: 18px;
-            border: 2px solid #fff;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin .6s linear infinite;
-            display: inline-block;
-        }
-    </style>
+@media(min-width: 768px) {
+    .info-grid { grid-template-columns: repeat(4, 1fr); }
+    .content { max-width: 700px; margin: 0 auto; }
+    .bottom-bar { max-width: 700px; left: 50%; transform: translateX(-50%); }
+}
+</style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>🔧 Checklist Mecânica Brasil</h1>
-        <span>Inspeção veicular completa</span>
-    </div>
+<div class="toast" id="toast"></div>
 
-    <div class="container">
-
-        <!-- Dados do Cliente/Veículo -->
-        <div class="card">
-            <h2>📋 Dados da Inspeção</h2>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Cliente</label>
-                    <input type="text" id="cliente" placeholder="Nome do cliente">
-                </div>
-                <div class="form-group">
-                    <label>Veículo</label>
-                    <input type="text" id="veiculo" placeholder="Modelo do veículo">
-                </div>
-            </div>
-            <div class="form-row col3">
-                <div class="form-group">
-                    <label>Placa</label>
-                    <input type="text" id="placa" placeholder="ABC-1234">
-                </div>
-                <div class="form-group">
-                    <label>KM Atual</label>
-                    <input type="text" id="km" placeholder="000.000">
-                </div>
-                <div class="form-group">
-                    <label>Data</label>
-                    <input type="date" id="data">
-                </div>
-            </div>
+<div class="header">
+    <div class="header-top">
+        <div class="logo">MB</div>
+        <div>
+            <h1>Mecânica Brasil</h1>
+            <div class="sub">Checklist de Manutenção</div>
         </div>
-
-        <!-- Checklist -->
-        <div class="card">
-            <h2>✅ Itens de Inspeção</h2>
-            <div id="categoriesContainer"></div>
-        </div>
-
-        <!-- Observações Gerais -->
-        <div class="card">
-            <h2>📝 Observações Gerais</h2>
-            <textarea id="generalObs" rows="3" placeholder="Observações adicionais sobre o veículo..."
-                style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;resize:vertical;"></textarea>
-        </div>
-
-        <!-- Botão Gerar Relatório -->
-        <button class="btn btn-primary" onclick="generateReport()" style="margin-bottom:20px;">
-            📊 Gerar Relatório Completo
-        </button>
-
-    </div>
-
-    <!-- Modal do Relatório -->
-    <div class="modal-overlay" id="reportModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>📊 Relatório de Inspeção</h2>
-                <button class="modal-close" onclick="closeModal('reportModal')">✕</button>
-            </div>
-            <div class="modal-body" id="reportBody"></div>
-            <div class="modal-footer" id="reportFooter"></div>
+        <div class="header-actions">
+            <button class="btn-reset" onclick="resetAllData()" title="Limpar todos os dados">🔄 Reset</button>
         </div>
     </div>
-
-    <!-- Modal de Prévia WhatsApp -->
-    <div class="modal-overlay" id="whatsappPreviewModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>📱 Enviar pelo WhatsApp</h2>
-                <button class="modal-close" onclick="closeModal('whatsappPreviewModal')">✕</button>
-            </div>
-            <div class="modal-body" id="whatsappPreviewContent"></div>
-        </div>
+    <div class="info-grid">
+        <input type="text" id="cliente" placeholder="Cliente" autocomplete="off">
+        <input type="text" id="veiculo" placeholder="Veículo" autocomplete="off">
+        <input type="text" id="placa" placeholder="Placa" autocomplete="off">
+        <input type="text" id="km" placeholder="KM" inputmode="numeric" autocomplete="off">
     </div>
+</div>
 
-    <!-- Toast -->
-    <div class="toast" id="toast"></div>
+<div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="progress-text" id="progressText">0/0</span>
+</div>
 
-    <!-- Inputs ocultos para captura de mídia -->
-    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;">
-    <input type="file" id="videoInput" accept="video/*" capture="environment" style="display:none;">
-    <input type="file" id="galleryInput" accept="image/*,video/*" multiple style="display:none;">
+<div class="tabs" id="tabs"></div>
 
-    <script>
-    // ============================================================
-    //  DADOS E CATEGORIAS
-    // ============================================================
-    const categories = [
-        { id: 'motor', label: '🔧 Motor', items: [
-            'Óleo do motor (nível/qualidade)',
-            'Correia dentada / Corrente',
-            'Correia de acessórios (alternador, ar cond.)',
-            'Velas / Cabos de ignição',
-            'Filtro de ar',
-            'Filtro de combustível',
-            'Sistema de injeção eletrônica',
-            'Vazamentos de óleo',
-            'Coxins do motor',
-            'Barulhos anormais'
-        ]},
-        { id: 'suspensao', label: '🔩 Suspensão', items: [
-            'Amortecedores dianteiros',
-            'Amortecedores traseiros',
-            'Molas / Feixe de molas',
-            'Bandejas / Braços de suspensão',
-            'Buchas da suspensão',
-            'Pivôs',
-            'Bieletas',
-            'Barra estabilizadora',
-            'Ruídos na suspensão'
-        ]},
-        { id: 'freios', label: '🛑 Freios', items: [
-            'Pastilhas dianteiras',
-            'Pastilhas traseiras',
-            'Discos de freio dianteiros',
-            'Discos de freio traseiros',
-            'Fluido de freio (nível/qualidade)',
-            'Flexíveis / Mangueiras de freio',
-            'Freio de estacionamento',
-            'Cilindro mestre',
-            'Pedal de freio (curso/dureza)',
-            'Lonas de freio (se aplicável)'
-        ]},
-        { id: 'transmissao', label: '⚙️ Transmissão', items: [
-            'Embreagem (curso/patinação)',
-            'Fluido de transmissão (automática)',
-            'Óleo do câmbio (manual)',
-            'Juntas homocinéticas',
-            'Semieixos',
-            'Diferencial',
-            'Trizeta / Cardan',
-            'Troca de marchas (suavidade)'
-        ]},
-        { id: 'eletrica', label: '⚡ Sistema Elétrico', items: [
-            'Bateria (carga/terminais)',
-            'Alternador (carga)',
-            'Motor de partida',
-            'Faróis (alto/baixo)',
-            'Lanternas traseiras',
-            'Setas / Pisca-alerta',
-            'Luz de freio',
-            'Luz de ré',
-            'Buzina',
-            'Painel de instrumentos',
-            'Vidros elétricos',
-            'Travas elétricas',
-            'Ar condicionado',
-            'Ventilador do radiador'
-        ]},
-        { id: 'pneus', label: '🛞 Pneus e Rodas', items: [
-            'Pneu dianteiro esquerdo',
-            'Pneu dianteiro direito',
-            'Pneu traseiro esquerdo',
-            'Pneu traseiro direito',
-            'Estepe',
-            'Alinhamento (desgaste irregular)',
-            'Balanceamento (vibração)',
-            'Calibragem',
-            'Parafusos das rodas'
-        ]},
-        { id: 'direcao', label: '🔄 Direção', items: [
-            'Folga do volante',
-            'Terminais de direção',
-            'Caixa de direção',
-            'Fluido hidráulico (direção)',
-            'Bomba da direção hidráulica',
-            'Coluna de direção',
-            'Coxim da caixa de direção'
-        ]},
-        { id: 'arrefecimento', label: '❄️ Arrefecimento', items: [
-            'Líquido de arrefecimento (nível)',
-            'Radiador (vazamentos/obstruções)',
-            'Mangueiras do radiador',
-            'Válvula termostática',
-            'Bomba d\'água',
-            'Ventoinha / Eletroventilador',
-            'Tampa do radiador',
-            'Reservatório de expansão'
-        ]},
-        { id: 'escapamento', label: '💨 Escapamento', items: [
-            'Silenciador / Abafador',
-            'Tubo de escape',
-            'Catalisador',
-            'Sonda lambda',
-            'Fixação do escapamento',
-            'Fumaça / Cor da fumaça',
-            'Ruídos no escapamento'
-        ]},
-        { id: 'carroceria', label: '🚗 Carroceria e Interior', items: [
-            'Lataria / Pintura',
-            'Para-brisa (trincas)',
-            'Vidros laterais',
-            'Retrovisores',
-            'Palhetas do limpador',
-            'Esguichos de água',
-            'Portas (abertura/fechamento)',
-            'Capô (abertura/fechamento)',
-            'Tampa do porta-malas',
-            'Cintos de segurança',
-            'Bancos (ajustes/integridade)',
-            'Tapetes / Carpetes',
-            'Chassi / Longarinas (corrosão)',
-            'Estofamento / Forração'
-        ]}
-    ];
+<div class="content" id="content">
+    <div style="text-align:center;padding:40px 20px;color:#94a3b8;">
+        <div style="font-size:30px;margin-bottom:10px;">⏳</div>
+        <div>Carregando checklist...</div>
+    </div>
+</div>
 
-    // Estado global dos itens: { 'categoriaId_idx': { status, obs, images:[], videos:[], audios:[] } }
-    let itemsState = {};
+<div class="bottom-bar">
+    <button class="btn btn-secondary" onclick="openObsModal()">📝 Obs.</button>
+    <button class="btn btn-primary" onclick="generateReport()" id="btnReport">📄 Relatório</button>
+</div>
 
-    function getKey(catId, idx) { return `${catId}_${idx}`; }
+<div class="modal-overlay" id="obsModal">
+    <div class="modal">
+        <h2> Observações</h2>
+        <textarea id="obsText" placeholder="Digite observações gerais..."></textarea>
+        <button class="btn btn-primary" onclick="saveObs()">Salvar</button>
+        <button class="btn btn-secondary" onclick="closeModal('obsModal')">Cancelar</button>
+    </div>
+</div>
 
-    function ensureItem(catId, idx) {
-        const key = getKey(catId, idx);
-        if (!itemsState[key]) {
-            itemsState[key] = { status: null, obs: '', images: [], videos: [], audios: [] };
-        }
-        return itemsState[key];
-    }
+<div class="modal-overlay" id="reportModal">
+    <div class="modal" id="reportContent"></div>
+</div>
 
-    // ============================================================
-    //  RENDERIZAR CHECKLIST
-    // ============================================================
-    function renderCategories() {
-        const container = document.getElementById('categoriesContainer');
-        container.innerHTML = '';
+<input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="audioInput" accept="audio/*" style="display:none">
+<input type="file" id="videoInput" accept="video/*" capture="environment" style="display:none">
 
-        categories.forEach((cat) => {
-            const catDiv = document.createElement('div');
-            catDiv.innerHTML = `
-                <div class="category-header" onclick="toggleCategory(this, '${cat.id}')">
-                    <span style="font-weight:600;">${cat.label}</span>
-                    <span style="font-size:12px;color:var(--muted);">${cat.items.length} itens</span>
-                    <span class="arrow">▼</span>
-                </div>
-                <div class="items-container" id="items_${cat.id}"></div>
-            `;
-            container.appendChild(catDiv);
+<script>
+// ============ CATEGORIAS DO CHECKLIST ============
+const categories = [
+    { id: 'motor', name: 'Motor', icon: '🔧', items: ['Nível do óleo do motor','Estado do óleo','Vazamentos de óleo','Filtro de óleo','Filtro de ar','Filtro de combustível','Filtro de cabine','Correia de acessórios','Correia dentada/corrente','Tensionadores','Coxins do motor','Mangueiras do motor','Velas','Cabos/Bobinas de ignição']},
+    { id: 'arrefecimento', name: 'Arrefecimento', icon: '❄️', items: ['Nível do líquido','Concentração do aditivo','Radiador','Tampa do reservatório','Reservatório','Mangueiras','Bomba d\'água','Ventoinha','Válvula termostática']},
+    { id: 'freios', name: 'Freios', icon: '🛑', items: ['Pastilhas dianteiras','Pastilhas traseiras','Lonas','Discos','Tambores','Fluido de freio','Mangueiras','Cilindros de roda','Freio de estacionamento']},
+    { id: 'suspensao', name: 'Suspensão', icon: '', items: ['Amortecedores','Molas','Batentes','Coifas','Pivôs','Buchas das bandejas','Bieletas','Barra estabilizadora','Rolamentos']},
+    { id: 'direcao', name: 'Direção', icon: '🔄', items: ['Terminais','Axiais','Caixa de direção','Vazamentos','Folgas','Alinhamento']},
+    { id: 'transmissao', name: 'Transmissão', icon: '⚡', items: ['Nível do óleo','Vazamentos','Homocinéticas','Coifas','Semi-eixos','Embreagem','ATF','Câmbio CVT/DSG']},
+    { id: 'pneus', name: 'Pneus', icon: '🛞', items: ['Calibragem','Desgaste','Rodízio','Estepe','Macaco','Chave de roda']},
+    { id: 'eletrica', name: 'Elétrica', icon: '💡', items: ['Bateria','Alternador','Motor de partida','Faróis','Lanternas','Luz de freio','Setas','Luz de ré','Limpadores','Esguicho']},
+    { id: 'ar', name: 'Ar-Condicionado', icon: '🌬️', items: ['Funcionamento','Filtro de cabine','Compressor','Ventilador interno','Temperatura']},
+    { id: 'escapamento', name: 'Escapamento', icon: '💨', items: ['Vazamentos','Coxins','Catalisador','Silenciosos']},
+    { id: 'seguranca', name: 'Segurança', icon: '🛡️', items: ['Cintos','Buzina','Airbag','ABS','Extintor']},
+    { id: 'diagnostico', name: 'Diagnóstico', icon: '💻', items: ['Scanner','Códigos de falha','Parâmetros do motor','Reset da manutenção']},
+    { id: 'rodagem', name: 'Teste Rodagem', icon: '🏎️', items: ['Motor','Freios','Direção','Suspensão','Câmbio','Ruídos']}
+];
 
-            const itemsContainer = document.getElementById(`items_${cat.id}`);
-            cat.items.forEach((itemLabel, idx) => {
-                const key = getKey(cat.id, idx);
-                const data = ensureItem(cat.id, idx);
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'checklist-item';
-                itemDiv.id = `item_${key}`;
-                itemDiv.innerHTML = `
-                    <span class="item-label">${itemLabel}</span>
-                    <div class="status-btns">
-                        <button class="status-btn ok ${data.status === 'ok' ? 'active' : ''}" 
-                            title="OK" onclick="setStatus('${cat.id}',${idx},'ok')">✅</button>
-                        <button class="status-btn repair ${data.status === 'repair' ? 'active' : ''}" 
-                            title="Precisa de reparo" onclick="setStatus('${cat.id}',${idx},'repair')">🔧</button>
-                        <button class="status-btn critical ${data.status === 'critical' ? 'active' : ''}" 
-                            title="Crítico" onclick="setStatus('${cat.id}',${idx},'critical')">🚨</button>
-                    </div>
-                    <input class="item-obs" type="text" placeholder="Observação..." value="${escapeHtml(data.obs || '')}" 
-                        onchange="setObs('${cat.id}',${idx},this.value)">
-                    <div class="item-media" id="media_${key}">${renderMediaThumbs(data)}</div>
-                    <div class="item-media">
-                        <button class="media-btn" onclick="capturePhoto('${cat.id}',${idx})">📷 Foto</button>
-                        <button class="media-btn" onclick="captureVideo('${cat.id}',${idx})">🎥 Vídeo</button>
-                        <button class="media-btn" onclick="captureAudio('${cat.id}',${idx})">🎤 Áudio</button>
-                        <button class="media-btn" onclick="pickFromGallery('${cat.id}',${idx})">🖼️ Galeria</button>
-                    </div>
-                `;
-                itemsContainer.appendChild(itemDiv);
-            });
-        });
-    }
+let checklistData = {};
+let generalClassification = '';
+let generalObs = '';
+let currentPhotoTarget = null;
+let currentAudioTarget = null;
+let currentVideoTarget = null;
+let useIndexedDB = true;
+let db = null;
+let loadedImages = {};
 
-    function renderMediaThumbs(data) {
-        let html = '';
-        (data.images || []).forEach((src, i) => {
-            html += `<img class="media-thumb" src="${src}" onclick="viewMedia('${src}')" title="Foto ${i+1}">`;
-        });
-        (data.videos || []).forEach((src, i) => {
-            html += `<video class="media-thumb" src="${src}" onclick="viewMedia('${src}')" title="Vídeo ${i+1}" muted></video>`;
-        });
-        (data.audios || []).forEach((src, i) => {
-            html += `<div class="media-thumb audio-thumb" onclick="playAudio('${src}')" title="Áudio ${i+1}">🎵</div>`;
-        });
-        return html;
-    }
-
-    function refreshMediaDisplay(catId, idx) {
-        const key = getKey(catId, idx);
-        const data = ensureItem(catId, idx);
-        const container = document.getElementById(`media_${key}`);
-        if (container) container.innerHTML = renderMediaThumbs(data);
-    }
-
-    function setStatus(catId, idx, status) {
-        const item = ensureItem(catId, idx);
-        item.status = item.status === status ? null : status; // toggle off if same
-        const key = getKey(catId, idx);
-        const itemDiv = document.getElementById(`item_${key}`);
-        if (itemDiv) {
-            const btns = itemDiv.querySelectorAll('.status-btn');
-            btns.forEach(b => b.classList.remove('active'));
-            if (item.status) {
-                const activeBtn = itemDiv.querySelector(`.status-btn.${item.status}`);
-                if (activeBtn) activeBtn.classList.add('active');
-            }
-        }
-    }
-
-    function setObs(catId, idx, value) {
-        const item = ensureItem(catId, idx);
-        item.obs = value;
-    }
-
-    function toggleCategory(header, catId) {
-        header.classList.toggle('open');
-        document.getElementById(`items_${catId}`).classList.toggle('show');
-    }
-
-    function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
-
-    // ============================================================
-    //  CAPTURA DE MÍDIA
-    // ============================================================
-    let pendingMediaCatId = null;
-    let pendingMediaIdx = null;
-    let pendingMediaType = null;
-
-    function capturePhoto(catId, idx) {
-        pendingMediaCatId = catId;
-        pendingMediaIdx = idx;
-        pendingMediaType = 'image';
-        document.getElementById('cameraInput').click();
-    }
-
-    function captureVideo(catId, idx) {
-        pendingMediaCatId = catId;
-        pendingMediaIdx = idx;
-        pendingMediaType = 'video';
-        document.getElementById('videoInput').click();
-    }
-
-    function captureAudio(catId, idx) {
-        pendingMediaCatId = catId;
-        pendingMediaIdx = idx;
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            showToast('⚠️ Gravação de áudio não suportada neste navegador');
-            return;
-        }
-        // Usar MediaRecorder para áudio
-        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-            showToast('🎤 Gravando... Fale agora.');
-            const mediaRecorder = new MediaRecorder(stream);
-            const chunks = [];
-            mediaRecorder.ondataavailable = e => chunks.push(e.data);
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'audio/webm' });
-                const url = URL.createObjectURL(blob);
-                const item = ensureItem(catId, idx);
-                item.audios.push(url);
-                refreshMediaDisplay(catId, idx);
-                showToast('✅ Áudio gravado!');
-                stream.getTracks().forEach(t => t.stop());
-            };
-            mediaRecorder.start();
-            // Parar após 30 segundos ou ao tocar na notificação
-            setTimeout(() => {
-                if (mediaRecorder.state === 'recording') mediaRecorder.stop();
-            }, 30000);
-            // Criar botão de parar
-            const stopToast = document.createElement('div');
-            stopToast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9999;';
-            stopToast.innerHTML = '<button style="background:#ef4444;color:#fff;border:none;padding:10px 20px;border-radius:30px;font-size:14px;cursor:pointer;">⏹ Parar Gravação</button>';
-            document.body.appendChild(stopToast);
-            stopToast.querySelector('button').onclick = () => {
-                if (mediaRecorder.state === 'recording') mediaRecorder.stop();
-                stopToast.remove();
-            };
-            mediaRecorder.onstop = () => {
-                stopToast.remove();
-                const blob = new Blob(chunks, { type: 'audio/webm' });
-                const url = URL.createObjectURL(blob);
-                const item = ensureItem(catId, idx);
-                item.audios.push(url);
-                refreshMediaDisplay(catId, idx);
-                showToast('✅ Áudio gravado!');
-                stream.getTracks().forEach(t => t.stop());
-            };
-        }).catch(() => {
-            showToast('❌ Não foi possível acessar o microfone');
-        });
-    }
-
-    function pickFromGallery(catId, idx) {
-        pendingMediaCatId = catId;
-        pendingMediaIdx = idx;
-        pendingMediaType = 'gallery';
-        document.getElementById('galleryInput').click();
-    }
-
-    document.getElementById('cameraInput').addEventListener('change', function(e) {
-        handleMediaFile(e.target.files[0], 'image');
-        this.value = '';
-    });
-    document.getElementById('videoInput').addEventListener('change', function(e) {
-        handleMediaFile(e.target.files[0], 'video');
-        this.value = '';
-    });
-    document.getElementById('galleryInput').addEventListener('change', function(e) {
-        Array.from(e.target.files).forEach(f => {
-            const type = f.type.startsWith('video/') ? 'video' : 'image';
-            handleMediaFile(f, type);
-        });
-        this.value = '';
-    });
-
-    function handleMediaFile(file, type) {
-        if (!file) return;
-        const catId = pendingMediaCatId;
-        const idx = pendingMediaIdx;
-        if (!catId && idx === null) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const item = ensureItem(catId, idx);
-            if (type === 'image') item.images.push(e.target.result);
-            else if (type === 'video') item.videos.push(e.target.result);
-            refreshMediaDisplay(catId, idx);
-            showToast(`✅ ${type === 'image' ? 'Foto' : 'Vídeo'} adicionado!`);
-        };
-        reader.readAsDataURL(file);
-    }
-
-    // Funções globais para visualização de mídia
-    function viewMedia(src) {
-        const w = window.open('', '_blank', 'width=800,height=600');
-        if (!w) { showToast('⚠️ Pop-up bloqueado'); return; }
-        w.document.write(`
-            <html><head><title>Visualizar Mídia</title><style>
-                body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#000;}
-                img,video{max-width:100%;max-height:100vh;}
-                video{controls;autoplay;}
-            </style></head><body>
-                ${src.startsWith('data:video') || src.includes('video') 
-                    ? `<video src="${src}" controls autoplay></video>` 
-                    : `<img src="${src}">`}
-            </body></html>
-        `);
-    }
-
-    function playAudio(src) {
-        const audio = new Audio(src);
-        audio.play().catch(() => showToast('⚠️ Não foi possível reproduzir o áudio'));
-    }
-
-    // ============================================================
-    //  RELATÓRIO
-    // ============================================================
-    function generateReport() {
-        const cliente = document.getElementById('cliente').value.trim();
-        const veiculo = document.getElementById('veiculo').value.trim();
-        const placa = document.getElementById('placa').value.trim();
-        const km = document.getElementById('km').value.trim();
-        const dataInput = document.getElementById('data').value;
-        const generalObs = document.getElementById('generalObs').value.trim();
-
-        if (!cliente || !veiculo || !placa) {
-            showToast('⚠️ Preencha: Cliente, Veículo e Placa');
-            return;
-        }
-
-        // Coletar estatísticas
-        let totalOk = 0, totalRepair = 0, totalCritical = 0, totalPhotos = 0, totalVideos = 0, totalAudios = 0;
-        for (const cat of categories) {
-            for (let idx = 0; idx < cat.items.length; idx++) {
-                const data = ensureItem(cat.id, idx);
-                if (data.status === 'ok') totalOk++;
-                else if (data.status === 'repair') totalRepair++;
-                else if (data.status === 'critical') totalCritical++;
-                totalPhotos += (data.images || []).length;
-                totalVideos += (data.videos || []).length;
-                totalAudios += (data.audios || []).length;
-            }
-        }
-
-        // Classificação
-        let generalClassification, classLabel, classColor;
-        if (totalCritical > 0) {
-            generalClassification = 'red';
-            classLabel = '🔴 Crítico - Requer atenção imediata';
-            classColor = '#991b1b';
-        } else if (totalRepair > 0) {
-            generalClassification = 'yellow';
-            classLabel = '🟡 Requer Atenção - Itens a reparar';
-            classColor = '#854d0e';
-        } else {
-            generalClassification = 'green';
-            classLabel = '🟢 Bom - Todos os itens OK';
-            classColor = '#166534';
-        }
-
-        const dataFormatada = dataInput 
-            ? new Date(dataInput + 'T00:00:00').toLocaleDateString('pt-BR') 
-            : new Date().toLocaleDateString('pt-BR');
-        const horaAtual = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-        // Armazenar dados para uso nas funções de compartilhamento
-        window._reportData = {
-            cliente, veiculo, placa, km,
-            data: dataFormatada,
-            hora: horaAtual,
-            totalOk, totalRepair, totalCritical,
-            totalPhotos, totalVideos, totalAudios,
-            generalClassification, classLabel, classColor,
-            generalObs
-        };
-
-        // Construir HTML do relatório com todas as mídias
-        let reportHTML = buildReportHTML(window._reportData);
-
-        // Renderizar na modal
-        document.getElementById('reportBody').innerHTML = reportHTML;
-        document.getElementById('reportFooter').innerHTML = `
-            <button class="btn btn-whatsapp" onclick="previewWhatsApp()">📱 Enviar por WhatsApp</button>
-            <button class="btn btn-primary" onclick="shareReportAsFile()">📤 Compartilhar Arquivo</button>
-            <button class="btn btn-secondary" onclick="downloadReportHTML()">💾 Baixar Relatório</button>
-            <button class="btn btn-secondary" onclick="printReport()">🖨️ Imprimir</button>
-            <button class="btn btn-secondary" onclick="closeModal('reportModal')">Fechar</button>
-        `;
-
-        openModal('reportModal');
-        showToast('✅ Relatório gerado!');
-    }
-
-    function buildReportHTML(dados) {
-        let html = `
-            <div style="text-align:center;margin-bottom:16px;">
-                <h3 style="margin:0;color:#1e3a5f;">🔧 Mecânica Brasil</h3>
-                <p style="margin:4px 0;color:var(--muted);">Relatório de Inspeção Veicular</p>
-                <span class="classification-badge ${dados.generalClassification}">${dados.classLabel}</span>
-            </div>
-            <div style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:14px;">
-                <p style="margin:2px 0;"><strong>👤 Cliente:</strong> ${escapeHtml(dados.cliente)}</p>
-                <p style="margin:2px 0;"><strong>🚗 Veículo:</strong> ${escapeHtml(dados.veiculo)}</p>
-                <p style="margin:2px 0;"><strong>🔢 Placa:</strong> ${escapeHtml(dados.placa)}</p>
-                <p style="margin:2px 0;"><strong>📏 KM:</strong> ${escapeHtml(dados.km)}</p>
-                <p style="margin:2px 0;"><strong>📅 Data:</strong> ${dados.data} às ${dados.hora}</p>
-            </div>
-            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
-                <div style="flex:1;min-width:80px;background:#dcfce7;padding:10px;border-radius:8px;text-align:center;">
-                    <div style="font-size:22px;font-weight:700;color:#166534;">${dados.totalOk}</div>
-                    <div style="font-size:11px;color:#166534;">✅ OK</div>
-                </div>
-                <div style="flex:1;min-width:80px;background:#fef9c3;padding:10px;border-radius:8px;text-align:center;">
-                    <div style="font-size:22px;font-weight:700;color:#854d0e;">${dados.totalRepair}</div>
-                    <div style="font-size:11px;color:#854d0e;">🔧 Reparo</div>
-                </div>
-                <div style="flex:1;min-width:80px;background:#fee2e2;padding:10px;border-radius:8px;text-align:center;">
-                    <div style="font-size:22px;font-weight:700;color:#991b1b;">${dados.totalCritical}</div>
-                    <div style="font-size:11px;color:#991b1b;">🚨 Crítico</div>
-                </div>
-                <div style="flex:1;min-width:80px;background:#e0e7ff;padding:10px;border-radius:8px;text-align:center;">
-                    <div style="font-size:22px;font-weight:700;color:#3730a3;">${dados.totalPhotos + dados.totalVideos + dados.totalAudios}</div>
-                    <div style="font-size:11px;color:#3730a3;">📎 Mídias</div>
-                </div>
-            </div>
-        `;
-
-        // Itens por categoria
-        for (const cat of categories) {
-            html += `<h4 style="margin:12px 0 6px 0;color:#1e3a5f;">${cat.label}</h4>`;
-            html += '<div style="background:#fafafa;border-radius:6px;padding:8px;margin-bottom:8px;">';
-            for (let idx = 0; idx < cat.items.length; idx++) {
-                const data = ensureItem(cat.id, idx);
-                let statusIcon = '⬜';
-                let statusColor = '#94a3b8';
-                if (data.status === 'ok') { statusIcon = '✅'; statusColor = '#22c55e'; }
-                else if (data.status === 'repair') { statusIcon = '🔧'; statusColor = '#eab308'; }
-                else if (data.status === 'critical') { statusIcon = '🚨'; statusColor = '#ef4444'; }
-
-                html += `<div style="display:flex;align-items:flex-start;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9;font-size:13px;">`;
-                html += `<span style="flex-shrink:0;">${statusIcon}</span>`;
-                html += `<span style="flex:1;">${cat.items[idx]}</span>`;
-                if (data.obs) html += `<span style="color:#64748b;font-style:italic;font-size:12px;">${escapeHtml(data.obs)}</span>`;
-                html += `</div>`;
-
-                // Mídias do item
-                if ((data.images || []).length > 0 || (data.videos || []).length > 0 || (data.audios || []).length > 0) {
-                    html += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0 8px 28px;">';
-                    (data.images || []).forEach(src => {
-                        html += `<img src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid #e2e8f0;">`;
-                    });
-                    (data.videos || []).forEach(src => {
-                        html += `<video src="${src}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid #e2e8f0;" muted></video>`;
-                    });
-                    (data.audios || []).forEach(() => {
-                        html += `<div style="width:60px;height:60px;background:#ede9fe;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:18px;">🎵</div>`;
-                    });
-                    html += '</div>';
-                }
-            }
-            html += '</div>';
-        }
-
-        if (dados.generalObs) {
-            html += `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-top:8px;">
-                <strong>📝 Observações Gerais:</strong><br>${escapeHtml(dados.generalObs)}
-            </div>`;
-        }
-
-        return html;
-    }
-
-    // ============================================================
-    //  COMPARTILHAMENTO - WHATSAPP
-    // ============================================================
-    function buildWhatsAppText(dados) {
-        const classLabel = dados.generalClassification === 'green' ? '🟢 Bom' :
-                           dados.generalClassification === 'yellow' ? '🟡 Requer Atenção' :
-                           '🔴 Crítico';
-
-        let texto = `📋 *Checklist Mecânica Brasil*\n`;
-        texto += `━━━━━━━━━━━━━━━━\n`;
-        texto += `👤 *Cliente:* ${dados.cliente}\n`;
-        texto += `🚗 *Veículo:* ${dados.veiculo}\n`;
-        texto += `🔢 *Placa:* ${dados.placa}\n`;
-        texto += `📏 *KM:* ${dados.km}\n`;
-        texto += `📅 *Data:* ${dados.data} às ${dados.hora}\n`;
-        texto += `━━━━━━━━━━━━━━━━\n`;
-        texto += `✅ Itens OK: ${dados.totalOk}\n`;
-        texto += `🔧 Precisam de reparo: ${dados.totalRepair}\n`;
-        texto += `⚠️ Críticos: ${dados.totalCritical}\n`;
-        texto += `━━━━━━━━━━━━━━━━\n`;
-        texto += `🏁 *Classificação:* ${classLabel}\n`;
-        texto += `📷 Fotos: ${dados.totalPhotos}\n`;
-        texto += `📹 Vídeos: ${dados.totalVideos}\n`;
-        texto += `🎤 Áudios: ${dados.totalAudios}`;
-
-        if (dados.generalObs) {
-            texto += `\n━━━━━━━━━━━━━━━━\n📝 *Obs:* ${dados.generalObs.substring(0, 200)}${dados.generalObs.length > 200 ? '...' : ''}`;
-        }
-
-        texto += `\n━━━━━━━━━━━━━━━━\n💡 Para ver as mídias, peça o arquivo completo.`;
-
-        return texto;
-    }
-
-    function previewWhatsApp() {
-        const dados = window._reportData;
-        if (!dados) { showToast('❌ Gere o relatório primeiro'); return; }
-
-        const texto = buildWhatsAppText(dados);
-
-        const previewHTML = `
-            <p style="margin-bottom:10px;color:var(--muted);">Pré-visualização da mensagem que será enviada:</p>
-            <div class="report-preview">${escapeHtml(texto)}</div>
-            <div class="btn-row" style="margin-top:12px;">
-                <button class="btn btn-whatsapp" onclick="sendWhatsAppMessage()" style="flex:2;">📱 Enviar pelo WhatsApp</button>
-                <button class="btn btn-secondary" onclick="closeModal('whatsappPreviewModal')" style="flex:1;">Cancelar</button>
-            </div>
-        `;
-
-        document.getElementById('whatsappPreviewContent').innerHTML = previewHTML;
-        openModal('whatsappPreviewModal');
-    }
-
-    function sendWhatsAppMessage() {
-        const dados = window._reportData;
-        if (!dados) return;
-
-        const texto = buildWhatsAppText(dados);
-        // Remover asteriscos de negrito do WhatsApp para a URL (eles funcionam no app, mas não na URL)
-        const textoLimpo = texto.replace(/\*/g, '');
-        const url = 'https://wa.me/?text=' + encodeURIComponent(textoLimpo);
-
-        const win = window.open(url, '_blank');
-        if (!win) {
-            // Fallback: copiar para clipboard
-            navigator.clipboard.writeText(textoLimpo).then(() => {
-                showToast('📋 Texto copiado! Cole no WhatsApp. (Pop-up bloqueado)');
-            }).catch(() => {
-                showToast('⚠️ Pop-up bloqueado. O texto está pronto para colar.');
-            });
-        } else {
-            closeModal('whatsappPreviewModal');
-            closeModal('reportModal');
-        }
-    }
-
-    // ============================================================
-    //  DOWNLOAD / COMPARTILHAR / IMPRIMIR
-    // ============================================================
-    function downloadReportHTML() {
-        const dados = window._reportData;
-        if (!dados) { showToast('❌ Gere o relatório primeiro'); return; }
-
-        const fullHTML = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Relatório - ${dados.cliente} - ${dados.veiculo}</title>
-    <style>
-        body{font-family:'Segoe UI',system-ui,sans-serif;max-width:700px;margin:20px auto;padding:0 16px;color:#1e293b;line-height:1.5;}
-        .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-weight:700;}
-        .badge.green{background:#dcfce7;color:#166534;}
-        .badge.yellow{background:#fef9c3;color:#854d0e;}
-        .badge.red{background:#fee2e2;color:#991b1b;}
-        .stats{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0;}
-        .stat{flex:1;min-width:80px;padding:10px;border-radius:8px;text-align:center;}
-        .stat .num{font-size:22px;font-weight:700;}
-        .stat .label{font-size:11px;}
-        h4{color:#1e3a5f;}
-        img,video{width:60px;height:60px;object-fit:cover;border-radius:4px;border:1px solid #e2e8f0;}
-        .obs-box{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-top:8px;}
-    </style>
-</head>
-<body>
-    ${buildReportHTML(dados)}
-    <p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:20px;">Relatório gerado pelo App Checklist Mecânica Brasil</p>
-</body>
-</html>`;
-
-        const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
+// ============ FUNÇÕES GLOBAIS PARA DOWNLOAD E COMPARTILHAMENTO (acessíveis pelo relatório) ============
+window.downloadMediaFromDataUrl = function(dataUrl, fileName) {
+    try {
         const a = document.createElement('a');
-        a.href = url;
-        a.download = `relatorio_${dados.cliente.replace(/\s+/g,'_')}_${dados.data.replace(/\//g,'-')}.html`;
+        a.href = dataUrl;
+        a.download = fileName;
+        a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('✅ Relatório baixado!');
+        setTimeout(() => { document.body.removeChild(a); }, 100);
+        showToast(' Baixando: ' + fileName);
+    } catch (err) {
+        console.error('Erro ao baixar:', err);
+        showToast('❌ Erro ao baixar arquivo');
     }
+};
 
-    function shareReportAsFile() {
-        const dados = window._reportData;
-        if (!dados) { showToast('❌ Gere o relatório primeiro'); return; }
+window.shareMediaFromReport = async function(dataUrl, fileName, mimeType) {
+    try {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], fileName, { type: mimeType });
 
-        const fullHTML = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head><meta charset="UTF-8"><title>Relatório</title>
-<style>body{font-family:sans-serif;max-width:700px;margin:20px auto;padding:0 16px;}</style>
-</head><body>${buildReportHTML(dados)}</body></html>`;
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                files: [file],
+                title: fileName,
+                text: '📋 Evidência do Checklist - Mecânica Brasil'
+            });
+            showToast('✅ Enviado com sucesso!');
+            return;
+        }
 
-        const blob = new Blob([fullHTML], { type: 'text/html' });
-        const file = new File([blob], `relatorio_${dados.cliente.replace(/\s+/g,'_')}.html`, { type: 'text/html' });
+        if (navigator.share) {
+            showToast('⚠️ Compartilhamento de arquivo não suportado. Baixando...');
+            window.downloadMediaFromDataUrl(dataUrl, fileName);
+            return;
+        }
 
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({
-                title: 'Relatório de Inspeção',
-                text: buildWhatsAppText(dados).replace(/\*/g, ''),
-                files: [file]
-            }).then(() => showToast('✅ Compartilhado!'))
-              .catch(() => showToast('ℹ️ Compartilhamento cancelado'));
-        } else if (navigator.share) {
-            navigator.share({
-                title: 'Relatório de Inspeção',
-                text: buildWhatsAppText(dados).replace(/\*/g, '')
-            }).catch(() => {});
-        } else {
-            // Fallback: download
-            downloadReportHTML();
-            showToast('📥 Navegador não suporta compartilhamento direto. Relatório baixado.');
+        window.downloadMediaFromDataUrl(dataUrl, fileName);
+        showToast('💾 Arquivo baixado. Envie manualmente pelo WhatsApp.');
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error('Erro ao compartilhar:', err);
+            window.downloadMediaFromDataUrl(dataUrl, fileName);
+            showToast('💾 Baixado. Envie manualmente pelo WhatsApp.');
         }
     }
+};
 
-    function printReport() {
-        const dados = window._reportData;
-        if (!dados) { showToast('❌ Gere o relatório primeiro'); return; }
+// ============ ARMAZENAMENTO COM FALLBACK ============
+function openDB() {
+    return new Promise((resolve) => {
+        try {
+            if (!window.indexedDB) { useIndexedDB = false; resolve(null); return; }
+            const request = indexedDB.open('MBChecklistDB', 1);
+            let resolved = false;
+            request.onerror = () => { if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); } };
+            request.onblocked = () => { if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); } };
+            request.onsuccess = () => { if (!resolved) { resolved = true; db = request.result; resolve(db); } };
+            request.onupgradeneeded = (event) => {
+                const database = event.target.result;
+                if (!database.objectStoreNames.contains('media')) {
+                    database.createObjectStore('media', { keyPath: 'id' });
+                }
+            };
+            setTimeout(() => { if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); } }, 1200);
+        } catch (e) { useIndexedDB = false; resolve(null); }
+    });
+}
 
-        const printWindow = window.open('', '_blank', 'width=800,height=600');
-        if (!printWindow) { showToast('⚠️ Pop-up bloqueado'); return; }
+async function saveMediaToDB(id, data) {
+    try { localStorage.setItem('media_' + id, data); } catch (e) {}
+    if (!useIndexedDB || !db) return;
+    try {
+        const transaction = db.transaction(['media'], 'readwrite');
+        const store = transaction.objectStore('media');
+        store.put({ id, data });
+    } catch (e) {}
+}
 
-        printWindow.document.write(`<!DOCTYPE html>
-<html lang="pt-BR">
-<head><meta charset="UTF-8"><title>Relatório</title>
-<style>
-    body{font-family:'Segoe UI',system-ui,sans-serif;max-width:700px;margin:20px auto;padding:0 16px;color:#000;}
-    @media print{body{margin:0;padding:0;}}
-</style></head><body>${buildReportHTML(dados)}</body></html>`);
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => printWindow.print(), 500);
+async function getMediaFromDB(id) {
+    if (loadedImages[id]) return loadedImages[id];
+    try {
+        const localData = localStorage.getItem('media_' + id);
+        if (localData) { loadedImages[id] = localData; return localData; }
+    } catch (e) {}
+    if (!useIndexedDB || !db) return null;
+    try {
+        return new Promise((resolve) => {
+            const transaction = db.transaction(['media'], 'readonly');
+            const store = transaction.objectStore('media');
+            const request = store.get(id);
+            request.onsuccess = () => {
+                const result = request.result ? request.result.data : null;
+                if (result) loadedImages[id] = result;
+                resolve(result);
+            };
+            request.onerror = () => resolve(null);
+            setTimeout(() => resolve(null), 1000);
+        });
+    } catch (e) { return null; }
+}
+
+async function deleteMediaFromDB(id) {
+    delete loadedImages[id];
+    try { localStorage.removeItem('media_' + id); } catch (e) {}
+    if (!useIndexedDB || !db) return;
+    try {
+        const transaction = db.transaction(['media'], 'readwrite');
+        const store = transaction.objectStore('media');
+        store.delete(id);
+    } catch (e) {}
+}
+
+function compressImage(file, maxWidth = 800, quality = 0.6) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width, height = img.height;
+                if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
+                canvas.width = width; canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = () => resolve(null);
+            img.src = e.target.result;
+        };
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+    });
+}
+
+function compressVideo(file, maxSizeMB = 15) {
+    return new Promise((resolve) => {
+        if (file.size <= maxSizeMB * 1024 * 1024) {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(file);
+            return;
+        }
+        showToast('️ Vídeo grande (' + Math.round(file.size/(1024*1024)) + 'MB). Processando...');
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(file);
+    });
+}
+
+// ============ FUNÇÕES DE DADOS ============
+function getKey(catId, idx) { return catId + '-' + idx; }
+
+function ensureItem(catId, idx) {
+    const key = getKey(catId, idx);
+    if (!checklistData[key] || typeof checklistData[key] !== 'object' || Array.isArray(checklistData[key])) {
+        checklistData[key] = { status: null, photos: [], audios: [], videos: [] };
+    }
+    const item = checklistData[key];
+    if (!Array.isArray(item.photos)) item.photos = [];
+    if (!Array.isArray(item.audios)) item.audios = [];
+    if (!Array.isArray(item.videos)) item.videos = [];
+    return item;
+}
+
+// ============ RENDERIZAÇÃO ============
+function renderTabs() {
+    document.getElementById('tabs').innerHTML = categories.map(c =>
+        '<button class="tab" data-cat="' + c.id + '" onclick="switchTab(\'' + c.id + '\')">' + c.icon + ' ' + c.name + '</button>'
+    ).join('');
+}
+
+function renderAllSections() {
+    const contentEl = document.getElementById('content');
+    let html = '';
+    categories.forEach(c => {
+        html += '<div class="section" id="section-' + c.id + '">';
+        html += '<div class="section-title">' + c.icon + ' ' + c.name + '</div>';
+        c.items.forEach((item, idx) => { html += renderItem(c.id, idx, item); });
+        if (c.id === categories[categories.length - 1].id) html += renderClassification();
+        html += '</div>';
+    });
+    contentEl.innerHTML = html;
+}
+
+function renderItem(catId, idx, label) {
+    const data = ensureItem(catId, idx);
+    const key = getKey(catId, idx);
+    const statusClass = data.status ? 'status-' + data.status : '';
+    const evidenceShow = (data.status === 'repair' || data.status === 'critical') ? 'show' : '';
+
+    let mediaHTML = '';
+    const hasMedia = data.photos.length > 0 || data.audios.length > 0 || data.videos.length > 0;
+    if (hasMedia) {
+        mediaHTML = '<div class="evidence-media">';
+        data.videos.forEach((videoId, vIdx) => {
+            mediaHTML +=
+                '<div class="media-item" style="background:#000;">' +
+                '<video src="" id="video-' + videoId + '" data-videoid="' + videoId + '" ' +
+                'onclick="event.stopPropagation();loadAndPlayVideo(\'' + videoId + '\')" ' +
+                'muted playsinline preload="none" style="width:100%;height:100%;object-fit:cover;cursor:pointer;"></video>' +
+                '<button class="media-remove" onclick="event.stopPropagation();removeVideo(\'' + catId + '\',' + idx + ',' + vIdx + ')">×</button>' +
+                '</div>';
+        });
+        data.photos.forEach((photoId, pIdx) => {
+            const placeholder = 'data:image/svg+xml,' + encodeURIComponent(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect fill="#334155" width="64" height="64"/><text x="32" y="40" text-anchor="middle" fill="#94a3b8" font-size="18">📷</text></svg>'
+            );
+            mediaHTML +=
+                '<div class="media-item">' +
+                '<img src="' + placeholder + '" ' +
+                'id="img-' + photoId + '" ' +
+                'data-photoid="' + photoId + '" ' +
+                'onclick="event.stopPropagation();loadAndShowPhoto(\'' + photoId + '\')" ' +
+                'onerror="this.onerror=null;this.src=\'' + placeholder + '\'" ' +
+                'loading="lazy">' +
+                '<button class="media-remove" onclick="event.stopPropagation();removePhoto(\'' + catId + '\',' + idx + ',' + pIdx + ')">×</button>' +
+                '</div>';
+        });
+        data.audios.forEach((audioId, aIdx) => {
+            mediaHTML +=
+                '<div class="media-item audio" onclick="event.stopPropagation();playAudio(\'' + audioId + '\')">' +
+                '🎤' +
+                '<button class="media-remove" onclick="event.stopPropagation();removeAudio(\'' + catId + '\',' + idx + ',' + aIdx + ')">×</button>' +
+                '</div>';
+        });
+        mediaHTML += '</div>';
     }
 
-    // ============================================================
-    //  MODAL
-    // ============================================================
-    function openModal(id) {
-        document.getElementById(id).classList.add('show');
-        document.body.classList.add('no-scroll');
-    }
+    return '' +
+        '<div class="item ' + statusClass + '" id="item-' + key + '">' +
+            '<div class="item-label">' + label + '</div>' +
+            '<div class="status-buttons">' +
+                '<button class="status-btn ok ' + (data.status === 'ok' ? 'active' : '') + '" onclick="setStatus(\'' + catId + '\',' + idx + ',\'ok\')">✅ Bom</button>' +
+                '<button class="status-btn repair ' + (data.status === 'repair' ? 'active' : '') + '" onclick="setStatus(\'' + catId + '\',' + idx + ',\'repair\')">🔧 Reparo</button>' +
+                '<button class="status-btn critical ' + (data.status === 'critical' ? 'active' : '') + '" onclick="setStatus(\'' + catId + '\',' + idx + ',\'critical\')">⚠️ Crítico</button>' +
+            '</div>' +
+            '<div class="evidence ' + evidenceShow + '">' +
+                '<div class="evidence-title">📸 Adicionar evidências:</div>' +
+                '<div class="evidence-buttons">' +
+                    '<button class="ev-btn photo" onclick="capturePhoto(\'' + catId + '\',' + idx + ')">📷 Foto</button>' +
+                    '<button class="ev-btn video" onclick="captureVideo(\'' + catId + '\',' + idx + ')">📹 Vídeo</button>' +
+                    '<button class="ev-btn voice" onclick="captureAudio(\'' + catId + '\',' + idx + ')">🎤 Áudio</button>' +
+                '</div>' +
+                mediaHTML +
+            '</div>' +
+        '</div>';
+}
 
-    function closeModal(id) {
-        document.getElementById(id).classList.remove('show');
-        document.body.classList.remove('no-scroll');
-    }
+function renderClassification() {
+    const greenClass = generalClassification === 'green' ? 'active-green' : '';
+    const yellowClass = generalClassification === 'yellow' ? 'active-yellow' : '';
+    const redClass = generalClassification === 'red' ? 'active-red' : '';
+    return '' +
+        '<div class="classification-section">' +
+            '<div class="classification-title">🏁 Classificação Geral</div>' +
+            '<div class="classification-buttons">' +
+                '<button class="class-btn ' + greenClass + '" onclick="setClassification(\'green\')">🟢 Bom</button>' +
+                '<button class="class-btn ' + yellowClass + '" onclick="setClassification(\'yellow\')">🟡 Atenção</button>' +
+                '<button class="class-btn ' + redClass + '" onclick="setClassification(\'red\')">🔴 Crítico</button>' +
+            '</div>' +
+        '</div>';
+}
 
-    // Fechar modal ao clicar fora
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', function(e) {
-            if (e.target === this) closeModal(this.id);
+function refreshItem(catId, idx) {
+    const cat = categories.find(c => c.id === catId);
+    if (!cat) return;
+    const label = cat.items[idx];
+    const key = getKey(catId, idx);
+    const oldEl = document.getElementById('item-' + key);
+    if (oldEl) {
+        oldEl.outerHTML = renderItem(catId, idx, label);
+        loadItemImages(catId, idx);
+        loadItemVideos(catId, idx);
+    }
+}
+
+async function loadItemImages(catId, idx) {
+    const data = ensureItem(catId, idx);
+    for (const photoId of data.photos) {
+        const imgEl = document.getElementById('img-' + photoId);
+        if (!imgEl) continue;
+        if (imgEl.src && imgEl.src.includes('svg+xml')) {
+            try {
+                const dataUrl = await getMediaFromDB(photoId);
+                if (dataUrl) imgEl.src = dataUrl;
+            } catch (e) {}
+        }
+    }
+}
+
+async function loadItemVideos(catId, idx) {
+    const data = ensureItem(catId, idx);
+    for (const videoId of data.videos) {
+        const videoEl = document.getElementById('video-' + videoId);
+        if (!videoEl) continue;
+        if (!videoEl.src || videoEl.src === window.location.href) {
+            try {
+                const dataUrl = await getMediaFromDB(videoId);
+                if (dataUrl) {
+                    videoEl.src = dataUrl;
+                    videoEl.load();
+                }
+            } catch (e) {}
+        }
+    }
+}
+
+async function loadMediaForSection(catId) {
+    const cat = categories.find(c => c.id === catId);
+    if (!cat) return;
+    for (let idx = 0; idx < cat.items.length; idx++) {
+        const data = ensureItem(catId, idx);
+        for (const photoId of data.photos) {
+            const imgEl = document.getElementById('img-' + photoId);
+            if (!imgEl) continue;
+            if (imgEl.src && imgEl.src.includes('svg+xml')) {
+                try {
+                    const dataUrl = await getMediaFromDB(photoId);
+                    if (dataUrl) imgEl.src = dataUrl;
+                } catch (e) {}
+            }
+        }
+        for (const videoId of data.videos) {
+            const videoEl = document.getElementById('video-' + videoId);
+            if (!videoEl) continue;
+            if (!videoEl.src || videoEl.src === window.location.href) {
+                try {
+                    const dataUrl = await getMediaFromDB(videoId);
+                    if (dataUrl) {
+                        videoEl.src = dataUrl;
+                        videoEl.load();
+                    }
+                } catch (e) {}
+            }
+        }
+        if (idx % 3 === 2) await new Promise(r => setTimeout(r, 50));
+    }
+}
+
+function switchTab(catId) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const section = document.getElementById('section-' + catId);
+    const tab = document.querySelector('[data-cat="' + catId + '"]');
+    if (section) section.classList.add('active');
+    if (tab) tab.classList.add('active');
+    loadMediaForSection(catId);
+    if (tab) tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+
+function setStatus(catId, idx, status) {
+    const data = ensureItem(catId, idx);
+    data.status = status;
+    refreshItem(catId, idx);
+    updateProgress();
+    saveData();
+}
+
+function setClassification(value) {
+    generalClassification = value;
+    const lastSection = document.getElementById('section-' + categories[categories.length - 1].id);
+    const oldClass = lastSection.querySelector('.classification-section');
+    if (oldClass) oldClass.outerHTML = renderClassification();
+    saveData();
+}
+
+function updateProgress() {
+    let total = 0, done = 0;
+    categories.forEach(c => {
+        c.items.forEach((_, idx) => {
+            total++;
+            const data = ensureItem(c.id, idx);
+            if (data.status) done++;
         });
     });
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('progressText').textContent = done + '/' + total + ' (' + pct + '%)';
+}
 
-    // ============================================================
-    //  TOAST
-    // ============================================================
-    let toastTimer;
-    function showToast(msg) {
-        const toast = document.getElementById('toast');
-        toast.textContent = msg;
-        toast.classList.add('show');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
-    }
+// ============ CAPTURA DE MÍDIA ============
+function captureAudio(catId, idx) {
+    currentAudioTarget = { catId, idx };
+    document.getElementById('audioInput').click();
+}
 
-    // ============================================================
-    //  INICIALIZAÇÃO
-    // ============================================================
-    function init() {
-        // Preencher data atual
-        document.getElementById('data').value = new Date().toISOString().split('T')[0];
-
-        // Renderizar categorias
-        renderCategories();
-
-        // Abrir primeira categoria por padrão
-        const firstHeader = document.querySelector('.category-header');
-        if (firstHeader) firstHeader.click();
-
-        // Carregar dados salvos do localStorage (se existir)
-        loadState();
-    }
-
-    function saveState() {
-        const state = {
-            cliente: document.getElementById('cliente').value,
-            veiculo: document.getElementById('veiculo').value,
-            placa: document.getElementById('placa').value,
-            km: document.getElementById('km').value,
-            data: document.getElementById('data').value,
-            generalObs: document.getElementById('generalObs').value,
-            itemsState: itemsState
+async function handleAudioSelected(e) {
+    const file = e.target.files[0];
+    if (!file || !currentAudioTarget) return;
+    try {
+        showToast('⏳ Processando áudio...');
+        const reader = new FileReader();
+        reader.onload = async function(ev) {
+            const audioId = 'audio-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            await saveMediaToDB(audioId, ev.target.result);
+            const data = ensureItem(currentAudioTarget.catId, currentAudioTarget.idx);
+            data.audios.push(audioId);
+            refreshItem(currentAudioTarget.catId, currentAudioTarget.idx);
+            saveData();
+            showToast(' Áudio salvo!');
+            currentAudioTarget = null;
         };
-        try {
-            localStorage.setItem('checklist_mecanica_brasil', JSON.stringify(state));
-        } catch(e) {
-            // localStorage pode estar cheio por causa das mídias
-            console.warn('Não foi possível salvar estado:', e.message);
+        reader.onerror = () => { showToast('❌ Erro ao ler áudio'); currentAudioTarget = null; };
+        reader.readAsDataURL(file);
+    } catch (err) {
+        console.error('Erro ao salvar áudio:', err);
+        showToast('❌ Erro ao salvar áudio');
+        currentAudioTarget = null;
+    }
+    e.target.value = '';
+}
+
+async function playAudio(audioId) {
+    const audioData = await getMediaFromDB(audioId);
+    if (audioData) {
+        const audio = new Audio(audioData);
+        audio.play().catch(() => showToast('❌ Não foi possível reproduzir'));
+    } else {
+        showToast('❌ Áudio não encontrado');
+    }
+}
+
+async function removeAudio(catId, idx, audioIdx) {
+    const data = ensureItem(catId, idx);
+    const audioId = data.audios[audioIdx];
+    await deleteMediaFromDB(audioId);
+    data.audios.splice(audioIdx, 1);
+    refreshItem(catId, idx);
+    saveData();
+    showToast('️ Áudio removido');
+}
+
+function capturePhoto(catId, idx) {
+    currentPhotoTarget = { catId, idx };
+    document.getElementById('photoInput').click();
+}
+
+async function handlePhotoSelected(e) {
+    const file = e.target.files[0];
+    if (!file || !currentPhotoTarget) return;
+    try {
+        showToast('⏳ Processando foto...');
+        const compressed = await compressImage(file);
+        if (!compressed) { showToast('❌ Erro ao processar foto'); currentPhotoTarget = null; e.target.value = ''; return; }
+        const photoId = 'photo-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        loadedImages[photoId] = compressed;
+        await saveMediaToDB(photoId, compressed);
+        const data = ensureItem(currentPhotoTarget.catId, currentPhotoTarget.idx);
+        data.photos.push(photoId);
+        refreshItem(currentPhotoTarget.catId, currentPhotoTarget.idx);
+        saveData();
+        showToast(' Foto salva!');
+        currentPhotoTarget = null;
+    } catch (err) {
+        console.error('Erro ao salvar foto:', err);
+        showToast('❌ Erro ao salvar foto');
+        currentPhotoTarget = null;
+    }
+    e.target.value = '';
+}
+
+async function removePhoto(catId, idx, photoIdx) {
+    const data = ensureItem(catId, idx);
+    const photoId = data.photos[photoIdx];
+    await deleteMediaFromDB(photoId);
+    data.photos.splice(photoIdx, 1);
+    refreshItem(catId, idx);
+    saveData();
+    showToast('🗑️ Foto removida');
+}
+
+async function loadAndShowPhoto(photoId) {
+    const dataUrl = await getMediaFromDB(photoId);
+    if (dataUrl) {
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write('<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;}img{max-width:100%;max-height:100vh;}</style></head><body><img src="' + dataUrl + '"></body></html>');
+        } else {
+            showToast('❌ Pop-up bloqueado');
         }
     }
+}
 
-    function loadState() {
-        try {
-            const saved = localStorage.getItem('checklist_mecanica_brasil');
-            if (saved) {
-                const state = JSON.parse(saved);
-                if (state.cliente) document.getElementById('cliente').value = state.cliente;
-                if (state.veiculo) document.getElementById('veiculo').value = state.veiculo;
-                if (state.placa) document.getElementById('placa').value = state.placa;
-                if (state.km) document.getElementById('km').value = state.km;
-                if (state.data) document.getElementById('data').value = state.data;
-                if (state.generalObs) document.getElementById('generalObs').value = state.generalObs;
-                if (state.itemsState) {
-                    itemsState = state.itemsState;
-                    renderCategories();
+// ============ CAPTURA DE VÍDEO ============
+function captureVideo(catId, idx) {
+    currentVideoTarget = { catId, idx };
+    document.getElementById('videoInput').click();
+}
+
+async function handleVideoSelected(e) {
+    const file = e.target.files[0];
+    if (!file || !currentVideoTarget) return;
+
+    const fileSizeMB = file.size / (1024 * 1024);
+    showToast('⏳ Processando vídeo (' + Math.round(fileSizeMB) + 'MB)...');
+
+    try {
+        const compressed = await compressVideo(file, 20);
+        if (!compressed) {
+            showToast('❌ Erro ao processar vídeo');
+            currentVideoTarget = null;
+            e.target.value = '';
+            return;
+        }
+
+        const videoId = 'video-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        loadedImages[videoId] = compressed;
+        await saveMediaToDB(videoId, compressed);
+
+        const data = ensureItem(currentVideoTarget.catId, currentVideoTarget.idx);
+        data.videos.push(videoId);
+        refreshItem(currentVideoTarget.catId, currentVideoTarget.idx);
+        saveData();
+        showToast('📹 Vídeo salvo!');
+        currentVideoTarget = null;
+    } catch (err) {
+        console.error('Erro ao salvar vídeo:', err);
+        showToast('❌ Erro ao salvar vídeo');
+        currentVideoTarget = null;
+    }
+    e.target.value = '';
+}
+
+async function loadAndPlayVideo(videoId) {
+    const dataUrl = await getMediaFromDB(videoId);
+    if (dataUrl) {
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(
+                '<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;}' +
+                'video{max-width:100%;max-height:100vh;display:block;}</style></head><body>' +
+                '<video controls autoplay playsinline src="' + dataUrl + '"></video></body></html>'
+            );
+        } else {
+            const videoEl = document.getElementById('video-' + videoId);
+            if (videoEl && (!videoEl.src || videoEl.src === window.location.href)) {
+                videoEl.src = dataUrl;
+                videoEl.load();
+                videoEl.play();
+            }
+            showToast('📹 Tocando vídeo');
+        }
+    } else {
+        showToast('❌ Vídeo não encontrado');
+    }
+}
+
+async function removeVideo(catId, idx, videoIdx) {
+    const data = ensureItem(catId, idx);
+    const videoId = data.videos[videoIdx];
+    await deleteMediaFromDB(videoId);
+    data.videos.splice(videoIdx, 1);
+    refreshItem(catId, idx);
+    saveData();
+    showToast('🗑️ Vídeo removido');
+}
+
+// ============ OBSERVAÇÕES ============
+function openObsModal() {
+    document.getElementById('obsText').value = generalObs;
+    document.getElementById('obsModal').classList.add('show');
+    document.body.classList.add('no-scroll');
+}
+
+function saveObs() {
+    generalObs = document.getElementById('obsText').value;
+    saveData();
+    closeModal('obsModal');
+    showToast('📝 Observação salva');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+    document.body.classList.remove('no-scroll');
+}
+
+// ============ RELATÓRIO ============
+async function generateReport() {
+    const btn = document.getElementById('btnReport');
+    btn.disabled = true;
+    btn.textContent = '⏳ Gerando...';
+
+    try {
+        const cliente = document.getElementById('cliente').value || '—';
+        const veiculo = document.getElementById('veiculo').value || '—';
+        const placa = document.getElementById('placa').value || '—';
+        const km = document.getElementById('km').value || '—';
+        const data = new Date().toLocaleDateString('pt-BR');
+        const hora = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+
+        showToast('📦 Carregando evidências...');
+
+        const mediaCache = {};
+        const allMediaIds = [];
+
+        for (const c of categories) {
+            for (let idx = 0; idx < c.items.length; idx++) {
+                const itemData = ensureItem(c.id, idx);
+                for (const photoId of itemData.photos) {
+                    if (!mediaCache[photoId]) allMediaIds.push(photoId);
+                }
+                for (const audioId of itemData.audios) {
+                    if (!mediaCache[audioId]) allMediaIds.push(audioId);
+                }
+                for (const videoId of itemData.videos) {
+                    if (!mediaCache[videoId]) allMediaIds.push(videoId);
                 }
             }
-        } catch(e) {
-            console.warn('Erro ao carregar estado:', e.message);
+        }
+
+        for (let i = 0; i < allMediaIds.length; i++) {
+            const id = allMediaIds[i];
+            if (!mediaCache[id]) {
+                const dataUrl = await getMediaFromDB(id);
+                if (dataUrl) mediaCache[id] = dataUrl;
+            }
+            if (i % 3 === 2) await new Promise(r => setTimeout(r, 30));
+        }
+
+        let totalPhotos = 0, totalAudios = 0, totalVideos = 0;
+        let reportHTML = '<div class="report-wrap">';
+
+        reportHTML +=
+            '<div class="rp-header">' +
+                '<h2>📋 RELATÓRIO DE CHECKLIST</h2>' +
+                '<p>Mecânica Brasil — ' + data + ' às ' + hora + '</p>' +
+            '</div>';
+
+        reportHTML +=
+            '<div class="rp-info">' +
+                '<div class="rp-info-row"><span>Cliente</span><span>' + cliente + '</span></div>' +
+                '<div class="rp-info-row"><span>Veículo</span><span>' + veiculo + '</span></div>' +
+                '<div class="rp-info-row"><span>Placa</span><span>' + placa + '</span></div>' +
+                '<div class="rp-info-row"><span>KM</span><span>' + km + '</span></div>' +
+            '</div>';
+
+        for (const c of categories) {
+            let hasAnyStatus = false;
+            for (let idx = 0; idx < c.items.length; idx++) {
+                const itemData = ensureItem(c.id, idx);
+                if (itemData.status || itemData.photos.length > 0 || itemData.audios.length > 0 || itemData.videos.length > 0) {
+                    hasAnyStatus = true;
+                    break;
+                }
+            }
+            if (!hasAnyStatus) continue;
+
+            reportHTML += '<div class="rp-category">';
+            reportHTML += '<h3>' + c.icon + ' ' + c.name + '</h3>';
+
+            for (let idx = 0; idx < c.items.length; idx++) {
+                const item = c.items[idx];
+                const itemData = ensureItem(c.id, idx);
+                if (!itemData.status && itemData.photos.length === 0 && itemData.audios.length === 0 && itemData.videos.length === 0) continue;
+
+                let icon = '';
+                if (itemData.status === 'ok') icon = '✅';
+                else if (itemData.status === 'repair') icon = '🔧';
+                else if (itemData.status === 'critical') icon = '️';
+
+                reportHTML += '<div class="rp-item">';
+                reportHTML += '<span class="rp-item-icon">' + icon + '</span>';
+                reportHTML += '<span>' + item + '</span></div>';
+
+                if (itemData.photos.length > 0 || itemData.audios.length > 0 || itemData.videos.length > 0) {
+                    reportHTML += '<div class="rp-media-grid">';
+
+                    // FOTOS
+                    for (const photoId of itemData.photos) {
+                        const dataUrl = mediaCache[photoId];
+                        if (dataUrl) {
+                            const safeId = photoId.replace(/[^a-zA-Z0-9]/g, '_');
+                            const fname = 'foto_' + safeId + '.jpg';
+                            reportHTML += '<div style="position:relative;">';
+                            reportHTML += '<img src="' + dataUrl + '" class="rp-photo" alt="Foto - ' + item + '" ' +
+                                'id="rp-photo-' + safeId + '" ' +
+                                'onclick="this.requestFullscreen?this.requestFullscreen():window.open(this.src)" ' +
+                                'onerror="this.onerror=null;this.style.display=\'none\'">';
+                            reportHTML += '<div class="rp-media-actions">';
+                            reportHTML += '<button class="rp-action-btn rp-btn-download" onclick="event.stopPropagation();window.downloadMediaFromDataUrl(\'' + dataUrl + '\',\'' + fname + '\')">💾 Baixar</button>';
+                            reportHTML += '<button class="rp-action-btn rp-btn-whatsapp" onclick="event.stopPropagation();window.shareMediaFromReport(\'' + dataUrl + '\',\'' + fname + '\',\'image/jpeg\')"> Enviar</button>';
+                            reportHTML += '</div>';
+                            reportHTML += '</div>';
+                            totalPhotos++;
+                        }
+                    }
+
+                    // VÍDEOS
+                    for (const videoId of itemData.videos) {
+                        const dataUrl = mediaCache[videoId];
+                        if (dataUrl) {
+                            const safeId = videoId.replace(/[^a-zA-Z0-9]/g, '_');
+                            const fname = 'video_' + safeId + '.mp4';
+                            reportHTML += '<div class="rp-video-wrap">';
+                            reportHTML += '<div class="rp-video-label">📹 Vídeo - ' + item + '</div>';
+                            reportHTML += '<video class="rp-video" controls preload="metadata" src="' + dataUrl + '"></video>';
+                            reportHTML += '<div class="rp-media-actions">';
+                            reportHTML += '<button class="rp-action-btn rp-btn-download" onclick="window.downloadMediaFromDataUrl(\'' + dataUrl + '\',\'' + fname + '\')">💾 Baixar</button>';
+                            reportHTML += '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaFromReport(\'' + dataUrl + '\',\'' + fname + '\',\'video/mp4\')"> Enviar</button>';
+                            reportHTML += '</div>';
+                            reportHTML += '</div>';
+                            totalVideos++;
+                        }
+                    }
+
+                    // ÁUDIOS
+                    for (const audioId of itemData.audios) {
+                        const dataUrl = mediaCache[audioId];
+                        if (dataUrl) {
+                            const safeId = audioId.replace(/[^a-zA-Z0-9]/g, '_');
+                            const fname = 'audio_' + safeId + '.webm';
+                            reportHTML +=
+                                '<div class="rp-audio-wrap">' +
+                                    '<div class="rp-audio-icon">🎤</div>' +
+                                    '<div style="flex:1;min-width:0;">' +
+                                        '<div class="rp-audio-label">Áudio - ' + item + '</div>' +
+                                        '<audio controls preload="metadata" src="' + dataUrl + '"></audio>' +
+                                        '<div class="rp-media-actions" style="margin-top:6px;">' +
+                                            '<button class="rp-action-btn rp-btn-download" onclick="window.downloadMediaFromDataUrl(\'' + dataUrl + '\',\'' + fname + '\')">💾 Baixar</button>' +
+                                            '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaFromReport(\'' + dataUrl + '\',\'' + fname + '\',\'audio/webm\')"> Enviar</button>' +
+                                        '</div>' +
+                                    '</div>' +
+                                '</div>';
+                            totalAudios++;
+                        }
+                    }
+                    reportHTML += '</div>';
+                }
+            }
+            reportHTML += '</div>';
+        }
+
+        const classLabel = generalClassification === 'green' ? '🟢 Bom' :
+                           generalClassification === 'yellow' ? '🟡 Requer Atenção' :
+                           generalClassification === 'red' ? '🔴 Crítico' : '—';
+
+        reportHTML +=
+            '<div class="rp-info">' +
+                '<div class="rp-info-row"><span>Classificação</span><span>' + classLabel + '</span></div>' +
+                '<div class="rp-info-row"><span>📷 Fotos no relatório</span><span>' + totalPhotos + '</span></div>' +
+                '<div class="rp-info-row"><span>📹 Vídeos no relatório</span><span>' + totalVideos + '</span></div>' +
+                '<div class="rp-info-row"><span>🎤 Áudios no relatório</span><span>' + totalAudios + '</span></div>' +
+            '</div>';
+
+        if (generalObs) {
+            reportHTML +=
+                '<div class="rp-info">' +
+                    '<div style="font-weight:600;margin-bottom:6px;color:#f59e0b;"> Observações Gerais:</div>' +
+                    '<p style="padding:4px 0;white-space:pre-wrap;">' + generalObs + '</p>' +
+                '</div>';
+        }
+
+        reportHTML += '<div class="rp-footer">Mecânica Brasil © ' + new Date().getFullYear() + '</div>';
+        reportHTML += '</div>';
+
+        const actionsHTML =
+            '<div class="report-actions">' +
+                '<button class="btn btn-primary" onclick="printReport()" style="width:100%;margin-top:8px;">🖨️ Imprimir / Salvar PDF</button>' +
+                '<button class="btn btn-secondary" onclick="shareReportHTML()" style="width:100%;margin-top:6px;">📤 Compartilhar Arquivo Completo</button>' +
+                '<button class="btn btn-secondary" onclick="downloadReportHTML()" style="width:100%;margin-top:6px;">💾 Baixar Relatório (.html)</button>' +
+                '<button class="btn btn-secondary" onclick="closeModal(\'reportModal\')" style="width:100%;margin-top:6px;">Fechar</button>' +
+            '</div>';
+
+        document.getElementById('reportContent').innerHTML = reportHTML + actionsHTML;
+        document.getElementById('reportModal').classList.add('show');
+        document.body.classList.add('no-scroll');
+
+        window._reportMediaCache = mediaCache;
+        window._reportData = { cliente, veiculo, placa, km, data, hora, totalPhotos, totalVideos, totalAudios };
+        window._reportHTMLBody = reportHTML;
+
+        showToast('✅ Relatório gerado!');
+    } catch (err) {
+        console.error('Erro ao gerar relatório:', err);
+        showToast('❌ Erro ao gerar relatório');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '📄 Relatório';
+    }
+}
+
+function printReport() {
+    const htmlBody = window._reportHTMLBody;
+    const dados = window._reportData;
+    if (!htmlBody) return;
+
+    const fullHTML = buildFullReportHTML(htmlBody, dados);
+    const win = window.open('', '_blank');
+    if (!win) { showToast('❌ Pop-up bloqueado'); return; }
+    win.document.write(fullHTML);
+    win.document.close();
+    setTimeout(() => { win.focus(); win.print(); }, 800);
+}
+
+function downloadReportHTML() {
+    const htmlBody = window._reportHTMLBody;
+    const dados = window._reportData;
+    if (!htmlBody) { showToast('❌ Gere o relatório primeiro'); return; }
+
+    const fullHTML = buildFullReportHTML(htmlBody, dados);
+    const fileName = 'checklist_' + (dados.cliente || 'cliente').replace(/\s+/g, '_') + '_' + (dados.placa || 'placa').replace(/\s+/g, '_') + '_' + new Date().toISOString().split('T')[0] + '.html';
+    const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 200);
+    showToast('💾 Relatório baixado: ' + fileName);
+}
+
+async function shareReportHTML() {
+    const htmlBody = window._reportHTMLBody;
+    const dados = window._reportData;
+    if (!htmlBody) { showToast('❌ Gere o relatório primeiro'); return; }
+
+    try {
+        showToast('📦 Preparando arquivo...');
+        const fullHTML = buildFullReportHTML(htmlBody, dados);
+        const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+        const fileName = 'checklist_' + (dados.cliente || 'cliente').replace(/\s+/g, '_') + '_' + (dados.placa || 'placa').replace(/\s+/g, '_') + '.html';
+        const file = new File([blob], fileName, { type: 'text/html' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+                title: 'Checklist ' + dados.cliente + ' - ' + dados.placa,
+                text: '📋 Relatório de checklist com ' + dados.totalPhotos + ' foto(s), ' + dados.totalVideos + ' vídeo(s) e ' + dados.totalAudios + ' áudio(s)',
+                files: [file]
+            });
+            showToast('✅ Compartilhado!');
+            return;
+        }
+
+        if (navigator.share) {
+            downloadReportHTML();
+            showToast('⚠️ Arquivo baixado. Compartilhe manualmente!');
+            return;
+        }
+
+        downloadReportHTML();
+        showToast('💾 Relatório baixado!');
+    } catch (err) {
+        if (err.name !== 'AbortError') {
+            console.error('Erro ao compartilhar:', err);
+            downloadReportHTML();
+            showToast('❌ Não foi possível compartilhar. Arquivo baixado.');
         }
     }
+}
 
-    // Salvar estado periodicamente
-    setInterval(saveState, 5000);
-    // Salvar ao sair
-    window.addEventListener('beforeunload', saveState);
-    // Salvar ao modificar campos
-    ['cliente', 'veiculo', 'placa', 'km', 'data', 'generalObs'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('change', saveState);
-        if (el && (el.tagName === 'INPUT' && el.type === 'text')) el.addEventListener('input', saveState);
-    });
+function buildFullReportHTML(bodyHTML, dados) {
+    const shareScript =
+        'function downloadMediaFromDataUrl(dataUrl, fileName){var a=document.createElement("a");a.href=dataUrl;a.download=fileName;a.style.display="none";document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a)},100);}\n' +
+        'async function shareMediaFromReport(dataUrl, fileName, mimeType){\n' +
+        '  try{\n' +
+        '    var res=await fetch(dataUrl);var blob=await res.blob();\n' +
+        '    var file=new File([blob],fileName,{type:mimeType});\n' +
+        '    if(navigator.canShare&&navigator.canShare({files:[file]})){\n' +
+        '      await navigator.share({files:[file],title:fileName,text:"📋 Evidência do Checklist - Mecânica Brasil"});\n' +
+        '      return;\n' +
+        '    }\n' +
+        '    if(navigator.share){alert("⚠️ Seu navegador não suporta envio de arquivo. O arquivo será baixado.");downloadMediaFromDataUrl(dataUrl,fileName);return;}\n' +
+        '    downloadMediaFromDataUrl(dataUrl,fileName);\n' +
+        '    alert("💾 Arquivo baixado. Envie manualmente pelo WhatsApp.");\n' +
+        '  }catch(err){\n' +
+        '    if(err.name!=="AbortError"){downloadMediaFromDataUrl(dataUrl,fileName);alert("💾 Baixado. Envie manualmente.");}\n' +
+        '  }\n' +
+        '}\n';
 
-    // Iniciar
-    init();
-    </script>
+    return '<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n' +
+        '<meta charset="UTF-8">\n' +
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
+        '<title>Checklist - ' + (dados.cliente || 'Cliente') + ' - ' + (dados.placa || 'Placa') + '</title>\n' +
+        '<style>\n' +
+        '*{margin:0;padding:0;box-sizing:border-box}\n' +
+        'body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:20px;color:#1e293b;font-size:13px;line-height:1.6;background:#fff;max-width:900px;margin:0 auto}\n' +
+        '.report-wrap{color:#1e293b}\n' +
+        '.rp-header{text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #e11d48}\n' +
+        '.rp-header h2{font-size:20px;color:#0f172a;margin-bottom:4px}\n' +
+        '.rp-header p{color:#64748b;font-size:12px}\n' +
+        '.rp-info{background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid #e2e8f0}\n' +
+        '.rp-info-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e2e8f0}\n' +
+        '.rp-info-row:last-child{border:none}\n' +
+        '.rp-info-row span:first-child{color:#64748b}\n' +
+        '.rp-info-row span:last-child{font-weight:600;color:#0f172a}\n' +
+        '.rp-category{margin-bottom:20px;page-break-inside:avoid}\n' +
+        '.rp-category h3{font-size:15px;color:#e11d48;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}\n' +
+        '.rp-item{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;align-items:center}\n' +
+        '.rp-item-icon{font-size:14px;flex-shrink:0}\n' +
+        '.rp-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:10px 0 10px 22px;padding:12px;background:#f8fafc;border-radius:8px;border-left:3px solid #e11d48}\n' +
+        '.rp-photo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer;display:block;transition:transform .2s}\n' +
+        '.rp-photo:hover{transform:scale(1.02)}\n' +
+        '.rp-video-wrap{grid-column:1/-1;background:#fef2f2;border-radius:8px;padding:12px;border:1px solid #fecaca}\n' +
+        '.rp-video-label{font-size:12px;color:#dc2626;margin-bottom:6px;font-weight:600}\n' +
+        '.rp-video{width:100%;max-height:350px;border-radius:6px;border:1px solid #cbd5e1;background:#000}\n' +
+        '.rp-audio-wrap{grid-column:1/-1;background:#eff6ff;border-radius:8px;padding:12px;display:flex;align-items:center;gap:12px;border:1px solid #bfdbfe}\n' +
+        '.rp-audio-icon{width:42px;height:42px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:#fff}\n' +
+        '.rp-audio-label{font-size:11px;color:#64748b;margin-bottom:3px}\n' +
+        '.rp-audio-wrap audio{width:100%;height:34px}\n' +
+        '.rp-media-actions{display:flex;gap:4px;margin-top:4px}\n' +
+        '.rp-action-btn{flex:1;padding:7px 8px;border-radius:6px;border:none;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:all .2s;text-decoration:none}\n' +
+        '.rp-action-btn:active{transform:scale(.96)}\n' +
+        '.rp-btn-download{background:#475569;color:#fff}\n' +
+        '.rp-btn-download:hover{background:#64748b}\n' +
+        '.rp-btn-whatsapp{background:#25D366;color:#fff}\n' +
+        '.rp-btn-whatsapp:hover{background:#1da851}\n' +
+        '.rp-footer{text-align:center;color:#94a3b8;font-size:10px;margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0}\n' +
+        '@media print{body{padding:10mm}.rp-category{page-break-inside:avoid}}\n' +
+        '@page{margin:15mm}\n' +
+        '</style>\n</head>\n<body>\n' +
+        bodyHTML +
+        '\n<script>\n' +
+        shareScript +
+        'document.querySelectorAll(".rp-photo").forEach(function(img){img.addEventListener("click",function(){if(this.requestFullscreen){this.requestFullscreen()}else{var w=window.open("","_blank");if(w){w.document.write(\'<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh}img{max-width:100%;max-height:100vh}</style></head><body><img src="\'+this.src+\'"></body></html>\')}}}});\n' +
+        '</' + 'script>\n</body>\n</html>';
+}
+
+// ============ PERSISTÊNCIA ============
+function saveData() {
+    const dataToSave = { checklist: checklistData, classification: generalClassification, obs: generalObs };
+    try { localStorage.setItem('mb_checklist_v3', JSON.stringify(dataToSave)); }
+    catch (e) { showToast('⚠️ Armazenamento cheio'); }
+}
+
+async function loadData() {
+    try {
+        const raw = localStorage.getItem('mb_checklist_v3');
+        if (raw) {
+            const data = JSON.parse(raw);
+            checklistData = data.checklist || {};
+            generalClassification = data.classification || '';
+            generalObs = data.obs || '';
+            Object.keys(checklistData).forEach(key => {
+                const item = checklistData[key];
+                if (!item || typeof item !== 'object') {
+                    checklistData[key] = { status: null, photos: [], audios: [], videos: [] };
+                } else {
+                    if (!Array.isArray(item.photos)) item.photos = [];
+                    if (!Array.isArray(item.audios)) item.audios = [];
+                    if (!Array.isArray(item.videos)) item.videos = [];
+                }
+            });
+        }
+    } catch (e) {
+        console.error('Erro ao carregar dados:', e);
+        checklistData = {};
+        generalClassification = '';
+        generalObs = '';
+    }
+}
+
+function resetAllData() {
+    if (!confirm('️ Isso apagará TODOS os dados do checklist (fotos, vídeos, áudios, preenchimentos). Continuar?')) return;
+    showToast('🔄 Limpando dados...');
+    loadedImages = {};
+    try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('mb_') || key.startsWith('media_'))) keysToRemove.push(key);
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch(e) {}
+    checklistData = {};
+    generalClassification = '';
+    generalObs = '';
+    db = null;
+    useIndexedDB = true;
+    try {
+        if (window.indexedDB) {
+            const delReq = indexedDB.deleteDatabase('MBChecklistDB');
+            let dbDeleted = false;
+            delReq.onsuccess = () => { if (!dbDeleted) { dbDeleted = true; doReload(); } };
+            delReq.onerror = () => { if (!dbDeleted) { dbDeleted = true; doReload(); } };
+            delReq.onblocked = () => { if (!dbDeleted) { dbDeleted = true; doReload(); } };
+            setTimeout(() => { if (!dbDeleted) { dbDeleted = true; doReload(); } }, 2000);
+        } else { doReload(); }
+    } catch(e) { doReload(); }
+    function doReload() { location.reload(); }
+}
+
+// ============ INICIALIZAÇÃO ============
+async function init() {
+    try { await openDB(); } catch (e) { useIndexedDB = false; }
+    try { await loadData(); } catch (e) { checklistData = {}; generalClassification = ''; generalObs = ''; }
+    try {
+        renderTabs();
+        renderAllSections();
+        updateProgress();
+        switchTab(categories[0].id);
+    } catch (e) {
+        console.error('Erro crítico ao renderizar:', e);
+        try {
+            renderTabs();
+            renderAllSections();
+            updateProgress();
+            switchTab(categories[0].id);
+            showToast('⚠️ App carregado com limitações');
+        } catch (e2) {
+            document.getElementById('content').innerHTML =
+                '<div style="text-align:center;padding:40px 20px;">' +
+                    '<div style="font-size:50px;margin-bottom:16px;">️</div>' +
+                    '<div style="color:#f59e0b;font-weight:700;margin-bottom:8px;">Erro ao carregar o app</div>' +
+                    '<div style="color:#94a3b8;margin-bottom:20px;font-size:14px;">Provavelmente há dados corrompidos</div>' +
+                    '<button class="btn btn-primary" onclick="resetAllData()" style="width:auto;display:inline-block;padding:12px 28px;font-size:14px;">🔄 Limpar Dados e Reiniciar</button>' +
+                '</div>';
+            return;
+        }
+    }
+    try {
+        document.getElementById('cliente').value = localStorage.getItem('mb_cliente') || '';
+        document.getElementById('veiculo').value = localStorage.getItem('mb_veiculo') || '';
+        document.getElementById('placa').value = localStorage.getItem('mb_placa') || '';
+        document.getElementById('km').value = localStorage.getItem('mb_km') || '';
+        ['cliente', 'veiculo', 'placa', 'km'].forEach(id => {
+            document.getElementById(id).addEventListener('input', function() {
+                localStorage.setItem('mb_' + id, document.getElementById(id).value);
+            });
+        });
+    } catch (e) {}
+    try {
+        document.getElementById('photoInput').addEventListener('change', handlePhotoSelected);
+        document.getElementById('audioInput').addEventListener('change', handleAudioSelected);
+        document.getElementById('videoInput').addEventListener('change', handleVideoSelected);
+    } catch (e) {}
+    try {
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) { this.classList.remove('show'); document.body.classList.remove('no-scroll'); }
+            });
+        });
+    } catch (e) {}
+    showToast('✅ App carregado!');
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+init();
+</script>
 </body>
 </html>
