@@ -2,889 +2,574 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="MB Checklist">
-<meta name="theme-color" content="#0f172a">
-<meta name="format-detection" content="telephone=no">
-<title>MB Checklist</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Checklist Veicular</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0f172a;
-    color: #e2e8f0;
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-    overflow-x: hidden;
-    -webkit-text-size-adjust: 100%;
-    -webkit-overflow-scrolling: touch;
-}
-html { height: -webkit-fill-available; }
-body { padding-bottom: 100px; padding-top: env(safe-area-inset-top); }
-body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1c1c1e; padding-bottom: 80px; }
+.header { background: linear-gradient(135deg, #007AFF, #0051D5); color: white; padding: 16px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.header h1 { font-size: 18px; font-weight: 600; }
+.progress-container { background: white; padding: 12px 16px; margin: 8px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.progress-bar { height: 8px; background: #e5e5ea; border-radius: 4px; overflow: hidden; margin-top: 8px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #34C759, #30D158); transition: width 0.3s ease; width: 0%; }
+.progress-text { font-size: 13px; color: #8e8e93; margin-top: 4px; text-align: right; }
+.form-section { background: white; margin: 8px; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; color: #3a3a3c; margin-bottom: 4px; }
+.form-group input { width: 100%; padding: 10px 12px; border: 1px solid #d1d1d6; border-radius: 8px; font-size: 15px; background: #f9f9f9; }
+.form-group input:focus { outline: none; border-color: #007AFF; background: white; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.category { background: white; margin: 8px; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.category-header { padding: 14px 16px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fafafa; border-bottom: 1px solid #e5e5ea; }
+.category-header .arrow { transition: transform 0.3s; font-size: 12px; }
+.category-header.open .arrow { transform: rotate(90deg); }
+.category-items { display: none; padding: 8px 0; }
+.category-items.show { display: block; }
+.item { padding: 12px 16px; border-bottom: 1px solid #f2f2f7; display: flex; align-items: center; gap: 10px; }
+.item:last-child { border-bottom: none; }
+.item-checkbox { width: 22px; height: 22px; accent-color: #34C759; cursor: pointer; flex-shrink: 0; }
+.item-label { flex: 1; font-size: 14px; cursor: pointer; }
+.item-actions { display: flex; gap: 6px; align-items: center; }
+.btn-icon { width: 32px; height: 32px; border: none; border-radius: 8px; background: #f2f2f7; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.btn-icon.has-photo { background: #34C759; color: white; }
+.btn-icon.has-audio { background: #007AFF; color: white; }
+.obs-indicator { width: 20px; height: 20px; border-radius: 50%; background: #FF9500; color: white; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+.bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 12px 16px; display: flex; gap: 8px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 100; }
+.btn { flex: 1; padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-primary { background: #007AFF; color: white; }
+.btn-success { background: #34C759; color: white; }
+.btn-danger { background: #FF3B30; color: white; }
+.btn-secondary { background: #f2f2f7; color: #1c1c1e; }
+.modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 16px; }
+.modal.show { display: flex; }
+.modal-content { background: white; border-radius: 16px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+.modal-header { padding: 16px; border-bottom: 1px solid #e5e5ea; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: white; z-index: 1; border-radius: 16px 16px 0 0; }
+.modal-header h3 { font-size: 16px; }
+.modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #8e8e93; }
+.modal-body { padding: 16px; }
+.photo-preview { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; margin-bottom: 12px; background: #f2f2f7; }
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.photo-thumb { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.photo-thumb .remove { position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,59,48,0.9); color: white; border: none; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.audio-list { margin-bottom: 12px; }
+.audio-item { display: flex; align-items: center; gap: 8px; padding: 8px; background: #f2f2f7; border-radius: 8px; margin-bottom: 6px; }
+.audio-item audio { flex: 1; height: 32px; }
+.audio-item .remove { background: #FF3B30; color: white; border: none; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-size: 12px; }
+.obs-textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid #d1d1d6; border-radius: 8px; font-size: 14px; resize: vertical; font-family: inherit; }
+.report-section { margin-bottom: 16px; }
+.report-section h4 { font-size: 14px; color: #007AFF; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e5e5ea; }
+.report-item { padding: 6px 0; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.report-item .status { width: 16px; height: 16px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
+.report-item .status.ok { background: #34C759; }
+.report-item .status.no { background: #FF3B30; }
+.report-photos { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; margin-left: 22px; }
+.report-photos img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; }
+.report-audios { margin-top: 4px; margin-left: 22px; }
+.report-audios audio { height: 28px; margin-bottom: 4px; }
+.report-obs { font-size: 12px; color: #666; font-style: italic; margin-left: 22px; margin-top: 2px; }
+.report-header-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; margin-bottom: 16px; padding: 12px; background: #f9f9f9; border-radius: 8px; }
+.report-header-info div { padding: 4px 0; }
+.report-header-info strong { color: #3a3a3c; }
+.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; z-index: 2000; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+.toast.show { opacity: 1; }
 
-.header {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    padding: 12px 16px;
-    padding-top: calc(12px + env(safe-area-inset-top));
-    border-bottom: 2px solid #e11d48;
-    position: sticky;
-    top: 0;
-    z-index: 50;
+/* Estilos para placeholders de mídia no relatório */
+.media-placeholder {
+    width: 60px; height: 60px; object-fit: cover; border-radius: 4px;
+    background: #e5e5ea; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px; color: #8e8e93;
 }
-.header-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.logo {
-    width: 40px; height: 40px; background: #e11d48; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 900; font-size: 14px; color: #fff; flex-shrink: 0;
-}
-.header h1 { font-size: 16px; font-weight: 700; line-height: 1.2; }
-.header .sub { font-size: 11px; color: #94a3b8; }
+.media-placeholder.loaded { background: transparent; }
 
-.header-actions { display: flex; gap: 6px; margin-left: auto; }
-.btn-reset {
-    background: #334155; border: 1px solid #475569; border-radius: 8px;
-    color: #94a3b8; font-size: 11px; padding: 8px 12px; cursor: pointer;
-    white-space: nowrap; -webkit-appearance: none; touch-action: manipulation;
+/* Botões de download de mídia */
+.media-download-btn {
+    display: inline-block; margin: 2px; padding: 4px 8px; background: #007AFF;
+    color: white; border-radius: 6px; font-size: 11px; cursor: pointer;
+    text-decoration: none; border: none;
 }
-.btn-reset:active { background: #ef4444; color: #fff; border-color: #ef4444; }
+.media-download-btn:active { background: #0051D5; }
 
-.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.info-grid input {
-    background: #1e293b; border: 1px solid #334155; border-radius: 8px;
-    padding: 10px 12px; color: #fff; font-size: 14px; width: 100%;
-    outline: none; -webkit-appearance: none; appearance: none;
+/* Botão download todas mídias */
+.btn-download-all {
+    display: block; width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 8px;
+    background: #34C759; color: white; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
 }
-.info-grid input:focus { border-color: #e11d48; }
-.info-grid input::placeholder { color: #64748b; }
+.btn-download-all:active { background: #248a3d; }
 
-.progress-wrap {
-    padding: 8px 16px; background: #0f172a;
-    display: flex; align-items: center; gap: 10px;
-}
-.progress-bar { flex: 1; height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
-.progress-fill { height: 100%; background: linear-gradient(90deg, #e11d48, #f97316); transition: width .3s; width: 0%; }
-.progress-text { font-size: 11px; font-weight: 700; color: #94a3b8; min-width: 50px; text-align: right; }
-
-.tabs {
-    display: flex; gap: 5px; padding: 6px 10px; overflow-x: auto;
-    scrollbar-width: none; background: #0f172a;
-    border-bottom: 1px solid #1e293b;
-    -webkit-overflow-scrolling: touch;
-}
-.tabs::-webkit-scrollbar { display: none; }
-.tab {
-    flex-shrink: 0; padding: 8px 12px; border-radius: 20px;
-    font-size: 12px; font-weight: 600; border: 1px solid #334155;
-    background: #1e293b; color: #94a3b8; cursor: pointer;
-    white-space: nowrap; transition: all .2s; -webkit-appearance: none;
-    touch-action: manipulation;
-}
-.tab.active { background: #e11d48; border-color: #e11d48; color: #fff; }
-
-.content { padding: 10px 12px; }
-.section { display: none; }
-.section.active { display: block; }
-.section-title {
-    font-size: 15px; font-weight: 700; margin: 6px 0 10px;
-    padding: 8px 12px; background: #1e293b; border-radius: 10px;
-    display: flex; align-items: center; gap: 8px;
-}
-
-.item {
-    background: #1e293b; border-radius: 12px; margin-bottom: 8px;
-    padding: 12px; border: 1px solid #334155; transition: border-color .2s;
-}
-.item.status-ok { border-color: #10b981; background: rgba(6, 78, 59, 0.2); }
-.item.status-repair { border-color: #f59e0b; background: rgba(120, 53, 15, 0.2); }
-.item.status-critical { border-color: #ef4444; background: rgba(127, 29, 29, 0.2); }
-
-.item-label { font-size: 13px; font-weight: 500; margin-bottom: 8px; line-height: 1.4; }
-.status-buttons { display: flex; gap: 5px; margin-bottom: 6px; }
-.status-btn {
-    flex: 1; padding: 10px 4px; border-radius: 8px;
-    border: 2px solid #334155; background: #0f172a;
-    color: #94a3b8; font-size: 11px; font-weight: 700;
-    cursor: pointer; transition: all .2s; text-align: center;
-    -webkit-appearance: none; touch-action: manipulation;
-}
-.status-btn.ok.active { background: #10b981; border-color: #10b981; color: #fff; }
-.status-btn.repair.active { background: #f59e0b; border-color: #f59e0b; color: #000; }
-.status-btn.critical.active { background: #ef4444; border-color: #ef4444; color: #fff; }
-
-.evidence { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #334155; }
-.evidence.show { display: block; }
-.evidence-title { font-size: 11px; color: #94a3b8; margin-bottom: 6px; font-weight: 600; }
-.evidence-buttons { display: flex; gap: 6px; margin-bottom: 6px; }
-.ev-btn {
-    flex: 1; padding: 10px; border-radius: 8px; border: none;
-    font-size: 12px; font-weight: 700; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    gap: 5px; transition: all .2s; -webkit-appearance: none;
-    touch-action: manipulation;
-}
-.ev-btn:active { transform: scale(.95); }
-.ev-btn.voice { background: #3b82f6; color: #fff; }
-.ev-btn.photo { background: #8b5cf6; color: #fff; }
-.ev-btn.video { background: #dc2626; color: #fff; }
-
-.evidence-media { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.media-item {
-    position: relative; width: 64px; height: 64px;
-    border-radius: 8px; overflow: hidden; border: 2px solid #334155;
-}
-.media-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.media-item video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.media-item.audio {
-    background: #1e40af; display: flex; align-items: center;
-    justify-content: center; font-size: 22px; cursor: pointer;
-}
-.media-remove {
-    position: absolute; top: 1px; right: 1px;
-    width: 18px; height: 18px; background: #ef4444;
-    color: #fff; border: none; border-radius: 50%;
-    font-size: 10px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    -webkit-appearance: none; touch-action: manipulation;
-    line-height: 1;
-}
-
-.bottom-bar {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: #1e293b; padding: 10px 14px;
-    padding-bottom: calc(10px + env(safe-area-inset-bottom));
-    display: flex; gap: 8px; border-top: 1px solid #334155; z-index: 50;
-}
-.btn {
-    flex: 1; padding: 14px; border-radius: 10px; border: none;
-    font-weight: 700; font-size: 14px; cursor: pointer;
-    transition: all .2s; -webkit-appearance: none;
-    touch-action: manipulation;
-}
-.btn:active { transform: scale(.96); }
-.btn-secondary { background: #334155; color: #fff; }
-.btn-primary { background: #e11d48; color: #fff; }
-.btn:disabled { opacity: .5; pointer-events: none; }
-
-.modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,.85);
-    z-index: 100; display: none; align-items: flex-end; justify-content: center;
-}
-.modal-overlay.show { display: flex; }
-.modal {
-    background: #1e293b; border-radius: 20px 20px 0 0;
-    padding: 20px; padding-bottom: calc(20px + env(safe-area-inset-bottom));
-    width: 100%; max-width: 500px; max-height: 85vh;
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
-}
-.modal h2 { font-size: 17px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-.modal textarea {
-    width: 100%; background: #0f172a; border: 1px solid #334155;
-    border-radius: 10px; color: #fff; padding: 12px; font-size: 14px;
-    min-height: 100px; resize: vertical; outline: none; font-family: inherit;
-    -webkit-appearance: none;
-}
-.modal textarea:focus { border-color: #e11d48; }
-.modal .btn { margin-top: 8px; width: 100%; }
-
-.toast {
-    position: fixed; top: calc(16px + env(safe-area-inset-top));
-    left: 50%; transform: translateX(-50%);
-    background: #10b981; color: #fff; padding: 10px 22px;
-    border-radius: 30px; font-weight: 700; font-size: 13px;
-    z-index: 200; display: none; pointer-events: none;
-    box-shadow: 0 8px 24px rgba(0,0,0,.4);
-    max-width: 90%; text-align: center;
-}
-.toast.show { display: block; animation: toastIn .3s; }
-@keyframes toastIn {
-    from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-    to { opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-
-.classification-section { margin-top: 14px; padding: 14px; background: #1e293b; border-radius: 12px; }
-.classification-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
-.classification-buttons { display: flex; gap: 6px; }
-.class-btn {
-    flex: 1; padding: 12px 6px; border-radius: 10px;
-    border: 2px solid #334155; background: #0f172a;
-    color: #94a3b8; font-weight: 700; font-size: 11px;
-    cursor: pointer; text-align: center; transition: all .2s;
-    -webkit-appearance: none; touch-action: manipulation;
-}
-.class-btn.active-green { background: #10b981; border-color: #10b981; color: #fff; }
-.class-btn.active-yellow { background: #f59e0b; border-color: #f59e0b; color: #000; }
-.class-btn.active-red { background: #ef4444; border-color: #ef4444; color: #fff; }
-
-@media(min-width: 768px) {
-    .info-grid { grid-template-columns: repeat(4, 1fr); }
-    .content { max-width: 700px; margin: 0 auto; }
-    .bottom-bar { max-width: 700px; left: 50%; transform: translateX(-50%); }
+@media print {
+    .bottom-bar, .modal-close, .btn { display: none !important; }
+    .modal { position: static; background: none; padding: 0; }
+    .modal-content { max-height: none; box-shadow: none; }
 }
 </style>
 </head>
 <body>
 
-<div class="toast" id="toast"></div>
-
 <div class="header">
-    <div class="header-top">
-        <div class="logo">MB</div>
-        <div>
-            <h1>Mecânica Brasil</h1>
-            <div class="sub">Checklist de Manutenção</div>
-        </div>
-        <div class="header-actions">
-            <button class="btn-reset" onclick="resetAllData()" title="Limpar todos os dados">🔄 Reset</button>
-        </div>
-    </div>
-    <div class="info-grid">
-        <input type="text" id="cliente" placeholder="Cliente" autocomplete="off">
-        <input type="text" id="veiculo" placeholder="Veículo" autocomplete="off">
-        <input type="text" id="placa" placeholder="Placa" autocomplete="off">
-        <input type="text" id="km" placeholder="KM" inputmode="numeric" autocomplete="off">
-    </div>
+    <h1>🚗 Checklist Veicular</h1>
 </div>
 
-<div class="progress-wrap">
+<div class="progress-container">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:13px;font-weight:600;">Progresso</span>
+        <span class="progress-text" id="progressText">0/0</span>
+    </div>
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-    <span class="progress-text" id="progressText">0/0</span>
 </div>
 
-<div class="tabs" id="tabs"></div>
-
-<div class="content" id="content">
-    <div style="text-align:center;padding:40px 20px;color:#94a3b8;">
-        <div style="font-size:30px;margin-bottom:10px;">⏳</div>
-        <div>Carregando checklist...</div>
+<div class="form-section">
+    <div class="form-group">
+        <label>Cliente</label>
+        <input type="text" id="cliente" placeholder="Nome do cliente">
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Veículo</label>
+            <input type="text" id="veiculo" placeholder="Modelo">
+        </div>
+        <div class="form-group">
+            <label>Placa</label>
+            <input type="text" id="placa" placeholder="ABC-1234">
+        </div>
+    </div>
+    <div class="form-group">
+        <label>KM</label>
+        <input type="number" id="km" placeholder="Quilometragem">
     </div>
 </div>
+
+<div id="categories"></div>
 
 <div class="bottom-bar">
-    <button class="btn btn-secondary" onclick="openObsModal()">📝 Obs.</button>
-    <button class="btn btn-primary" onclick="generateReport()" id="btnReport">📄 Relatório</button>
+    <button class="btn btn-primary" onclick="generateReport()">📄 Relatório</button>
+    <button class="btn btn-success" onclick="saveData()">💾 Salvar</button>
+    <button class="btn btn-danger" onclick="resetAllData()">🗑️ Limpar</button>
 </div>
 
-<div class="modal-overlay" id="obsModal">
-    <div class="modal">
-        <h2>📝 Observações</h2>
-        <textarea id="obsText" placeholder="Digite observações gerais..."></textarea>
-        <button class="btn btn-primary" onclick="saveObs()">Salvar</button>
-        <button class="btn btn-secondary" onclick="closeModal('obsModal')">Cancelar</button>
+<!-- Modal Mídia -->
+<div class="modal" id="mediaModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="mediaModalTitle">Mídias</h3>
+            <button class="modal-close" onclick="closeModal('mediaModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="photo-grid" id="photoGrid"></div>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <label class="btn btn-primary" style="text-align:center;margin:0;">
+                    📷 Foto
+                    <input type="file" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelected(event)">
+                </label>
+                <label class="btn btn-secondary" style="text-align:center;margin:0;">
+                    🖼️ Galeria
+                    <input type="file" accept="image/*" multiple style="display:none;" onchange="handlePhotoSelected(event)">
+                </label>
+            </div>
+            <div class="audio-list" id="audioList"></div>
+            <div style="display:flex;gap:8px;">
+                <label class="btn btn-primary" style="text-align:center;margin:0;flex:1;">
+                    🎤 Gravar Áudio
+                    <input type="file" accept="audio/*" capture="usermodel" style="display:none;" onchange="handleAudioSelected(event)">
+                </label>
+                <label class="btn btn-secondary" style="text-align:center;margin:0;flex:1;">
+                    🎵 Arquivo Áudio
+                    <input type="file" accept="audio/*" style="display:none;" onchange="handleAudioSelected(event)">
+                </label>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="modal-overlay" id="reportModal">
-    <div class="modal" id="reportContent"></div>
+<!-- Modal Observação -->
+<div class="modal" id="obsModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Observação</h3>
+            <button class="modal-close" onclick="closeModal('obsModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <textarea class="obs-textarea" id="obsText" placeholder="Digite sua observação..."></textarea>
+            <button class="btn btn-primary" onclick="saveObs()" style="margin-top:12px;width:100%;">Salvar</button>
+        </div>
+    </div>
 </div>
 
-<input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
-<input type="file" id="audioInput" accept="audio/*" style="display:none">
-<input type="file" id="videoInput" accept="video/*" capture="environment" style="display:none">
+<!-- Modal Relatório -->
+<div class="modal" id="reportModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Relatório</h3>
+            <button class="modal-close" onclick="closeModal('reportModal')">×</button>
+        </div>
+        <div class="modal-body" id="reportContent"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-// ============ CATEGORIAS DO CHECKLIST ============
+// ==================== CATEGORIAS ====================
 const categories = [
-    { id: 'motor', name: 'Motor', icon: '🔧', items: ['Nível do óleo do motor','Estado do óleo','Vazamentos de óleo','Filtro de óleo','Filtro de ar','Filtro de combustível','Filtro de cabine','Correia de acessórios','Correia dentada/corrente','Tensionadores','Coxins do motor','Mangueiras do motor','Velas','Cabos/Bobinas de ignição']},
-    { id: 'arrefecimento', name: 'Arrefecimento', icon: '❄️', items: ['Nível do líquido','Concentração do aditivo','Radiador','Tampa do reservatório','Reservatório','Mangueiras','Bomba d\'água','Ventoinha','Válvula termostática']},
-    { id: 'freios', name: 'Freios', icon: '', items: ['Pastilhas dianteiras','Pastilhas traseiras','Lonas','Discos','Tambores','Fluido de freio','Mangueiras','Cilindros de roda','Freio de estacionamento']},
-    { id: 'suspensao', name: 'Suspensão', icon: '', items: ['Amortecedores','Molas','Batentes','Coifas','Pivôs','Buchas das bandejas','Bieletas','Barra estabilizadora','Rolamentos']},
-    { id: 'direcao', name: 'Direção', icon: '🔄', items: ['Terminais','Axiais','Caixa de direção','Vazamentos','Folgas','Alinhamento']},
-    { id: 'transmissao', name: 'Transmissão', icon: '⚡', items: ['Nível do óleo','Vazamentos','Homocinéticas','Coifas','Semi-eixos','Embreagem','ATF','Câmbio CVT/DSG']},
-    { id: 'pneus', name: 'Pneus', icon: '🛞', items: ['Calibragem','Desgaste','Rodízio','Estepe','Macaco','Chave de roda']},
-    { id: 'eletrica', name: 'Elétrica', icon: '💡', items: ['Bateria','Alternador','Motor de partida','Faróis','Lanternas','Luz de freio','Setas','Luz de ré','Limpadores','Esguicho']},
-    { id: 'ar', name: 'Ar-Condicionado', icon: '🌬️', items: ['Funcionamento','Filtro de cabine','Compressor','Ventilador interno','Temperatura']},
-    { id: 'escapamento', name: 'Escapamento', icon: '💨', items: ['Vazamentos','Coxins','Catalisador','Silenciosos']},
-    { id: 'seguranca', name: 'Segurança', icon: '🛡️', items: ['Cintos','Buzina','Airbag','ABS','Extintor']},
-    { id: 'diagnostico', name: 'Diagnóstico', icon: '💻', items: ['Scanner','Códigos de falha','Parâmetros do motor','Reset da manutenção']},
-    { id: 'rodagem', name: 'Teste Rodagem', icon: '🏎️', items: ['Motor','Freios','Direção','Suspensão','Câmbio','Ruídos']}
+    { id: 'lataria', name: '🔧 Lataria e Pintura', items: [
+        'Para-choque dianteiro', 'Para-choque traseiro', 'Capô', 'Teto',
+        'Porta dianteira esquerda', 'Porta dianteira direita', 'Porta traseira esquerda', 'Porta traseira direita',
+        'Para-lama dianteiro esquerdo', 'Para-lama dianteiro direito', 'Para-lama traseiro esquerdo', 'Para-lama traseiro direito',
+        'Retrovisor esquerdo', 'Retrovisor direito', 'Maçanetas', 'Frisos',
+        'Vidro dianteiro', 'Vidro traseiro', 'Vidros laterais', 'Pilar A', 'Pilar B', 'Pilar C',
+        'Soleiras', 'Estribo', 'Tampa do tanque', 'Saída de escapamento'
+    ]},
+    { id: 'internos', name: '💺 Componentes Internos', items: [
+        'Painel', 'Volante', 'Console central', 'Tapetes',
+        'Banco do motorista', 'Banco do passageiro', 'Bancos traseiros',
+        'Cintos de segurança', 'Encosto de cabeça', 'Revisores de banco',
+        'Ar condicionado', 'Ventilação', 'Rádio/Multimídia', 'Alto-falantes',
+        'Retrovisor interno', 'Para-sóis', 'Iluminação interna',
+        'Porta-luvas', 'Cinzeiro/Acendedor', 'Tomada 12V', ' porta-copos'
+    ]},
+    { id: 'mecanica', name: '⚙️ Mecânica', items: [
+        'Motor (vazamentos)', 'Óleo do motor', 'Líquido de arrefecimento', 'Líquido de freio',
+        'Direção hidráulica', 'Bateria', 'Correias', 'Mangueiras',
+        'Amortecedores dianteiros', 'Amortecedores traseiros', 'Molas', 'Bielas',
+        'Disco de freio', 'Pastilhas de freio', 'Tambores', 'Lonas',
+        'Pneus dianteiros', 'Pneus traseiros', 'Estepe', 'Macaco/Chave de roda',
+        'Escape', 'Catalisador', 'Suportes do motor', 'Câmbio'
+    ]},
+    { id: 'eletrica', name: '⚡ Sistema Elétrico', items: [
+        'Faróis principais', 'Lanternas traseiras', 'Luz de freio', 'Luz de ré',
+        'Setas dianteiras', 'Setas traseiras', 'Luz de placa', 'Luz interna',
+        'Buzina', 'Limpador dianteiro', 'Limpador traseiro', 'Lavador de para-brisa',
+        'Vidros elétricos', 'Travas elétricas', 'Alarme', 'Sensor de estacionamento',
+        'Câmera de ré', 'Airbag', 'ABS', 'Painel de instrumentos'
+    ]},
+    { id: 'acessorios', name: '🎯 Acessórios', items: [
+        'Calotas', 'Capa do estepe', 'Antena', 'Adesivos',
+        'Tapete de borracha', 'Tapete de carpete', 'Capa de banco', 'Volante com cobertura',
+        'Insulfilm', 'Cortinas', 'Bagageiro', 'Barras de teto'
+    ]}
 ];
 
-let checklistData = {};
-let generalClassification = '';
-let generalObs = '';
-let currentPhotoTarget = null;
-let currentAudioTarget = null;
-let currentVideoTarget = null;
-let useIndexedDB = true;
-let db = null;
-let loadedImages = {};
+// ==================== INDEXEDDB ====================
+const DB_NAME = 'checklistDB';
+const DB_VERSION = 1;
+let db;
 
-// ============================================================
-// 🔧 CACHE GLOBAL DE MÍDIAS DO RELATÓRIO
-// ============================================================
-window._reportMediaCache = {};
-
-// ============================================================
-// 📥 DOWNLOAD
-// ============================================================
-window.downloadMediaById = function(mediaId, fileName) {
-    var dataUrl = null;
-    if (window._reportMediaCache && window._reportMediaCache[mediaId]) {
-        dataUrl = window._reportMediaCache[mediaId];
-    }
-    if (!dataUrl) {
-        alert('Mídia não encontrada. Tente gerar o relatório novamente.');
-        return;
-    }
-    try {
-        var a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = fileName;
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(function() { document.body.removeChild(a); }, 300);
-        if (typeof showToast === 'function') showToast('💾 Baixando: ' + fileName);
-    } catch (err) {
-        console.error('Erro ao baixar:', err);
-        try {
-            window.open(dataUrl, '_blank');
-        } catch(e2) {
-            alert('Erro ao baixar. Pressione e segure a mídia para salvar.');
-        }
-    }
-};
-
-// ============================================================
-// 📤 COMPARTILHAR
-// ============================================================
-window.shareMediaById = async function(mediaId, fileName, mimeType) {
-    var dataUrl = null;
-    if (window._reportMediaCache && window._reportMediaCache[mediaId]) {
-        dataUrl = window._reportMediaCache[mediaId];
-    }
-    if (!dataUrl) {
-        alert('Mídia não encontrada. Tente gerar o relatório novamente.');
-        return;
-    }
-    try {
-        var res = await fetch(dataUrl);
-        var blob = await res.blob();
-        var file = new File([blob], fileName, { type: mimeType });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-                files: [file],
-                title: fileName,
-                text: ' Evidência - Checklist Mecânica Brasil'
-            });
-            if (typeof showToast === 'function') showToast('✅ Enviado!');
-            return;
-        }
-
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: fileName,
-                    text: '📋 Evidência do Checklist - Mecânica Brasil'
-                });
-                return;
-            } catch(e) {
-                if (e.name === 'AbortError') return;
-            }
-        }
-
-        window.downloadMediaById(mediaId, fileName);
-        if (typeof showToast === 'function') showToast('💾 Baixado. Envie manualmente.');
-    } catch (err) {
-        if (err.name !== 'AbortError') {
-            console.error('Erro ao compartilhar:', err);
-            window.downloadMediaById(mediaId, fileName);
-            if (typeof showToast === 'function') showToast('💾 Baixado. Envie manualmente.');
-        }
-    }
-};
-
-// ============ ARMAZENAMENTO COM FALLBACK ============
 function openDB() {
-    return new Promise((resolve) => {
-        try {
-            if (!window.indexedDB) { useIndexedDB = false; resolve(null); return; }
-            const request = indexedDB.open('MBChecklistDB', 1);
-            let resolved = false;
-            request.onerror = () => { if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); } };
-            request.onblocked = () => { if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); } };
-            request.onsuccess = () => { if (!resolved) { resolved = true; db = request.result; resolve(db); } };
-            request.onupgradeneeded = (event) => {
-                const database = event.target.result;
-                if (!database.objectStoreNames.contains('media')) {
-                    database.createObjectStore('media', { keyPath: 'id' });
-                }
-            };
-            setTimeout(() => { if (!resolved) { resolved = true; useIndexedDB = false; resolve(null); } }, 1200);
-        } catch (e) { useIndexedDB = false; resolve(null); }
-    });
-}
-
-async function saveMediaToDB(id, data) {
-    try { localStorage.setItem('media_' + id, data); } catch (e) {}
-    if (!useIndexedDB || !db) return;
-    try {
-        const transaction = db.transaction(['media'], 'readwrite');
-        const store = transaction.objectStore('media');
-        store.put({ id, data });
-    } catch (e) {}
-}
-
-async function getMediaFromDB(id) {
-    if (loadedImages[id]) return loadedImages[id];
-    try {
-        const localData = localStorage.getItem('media_' + id);
-        if (localData) { loadedImages[id] = localData; return localData; }
-    } catch (e) {}
-    if (!useIndexedDB || !db) return null;
-    try {
-        return new Promise((resolve) => {
-            const transaction = db.transaction(['media'], 'readonly');
-            const store = transaction.objectStore('media');
-            const request = store.get(id);
-            request.onsuccess = () => {
-                const result = request.result ? request.result.data : null;
-                if (result) loadedImages[id] = result;
-                resolve(result);
-            };
-            request.onerror = () => resolve(null);
-            setTimeout(() => resolve(null), 1000);
-        });
-    } catch (e) { return null; }
-}
-
-async function deleteMediaFromDB(id) {
-    delete loadedImages[id];
-    try { localStorage.removeItem('media_' + id); } catch (e) {}
-    if (!useIndexedDB || !db) return;
-    try {
-        const transaction = db.transaction(['media'], 'readwrite');
-        const store = transaction.objectStore('media');
-        store.delete(id);
-    } catch (e) {}
-}
-
-function compressImage(file, maxWidth = 800, quality = 0.6) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width, height = img.height;
-                if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
-                canvas.width = width; canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', quality));
-            };
-            img.onerror = () => resolve(null);
-            img.src = e.target.result;
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => { db = request.result; resolve(db); };
+        request.onupgradeneeded = (e) => {
+            const database = e.target.result;
+            if (!database.objectStoreNames.contains('media')) {
+                database.createObjectStore('media', { keyPath: 'id' });
+            }
         };
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(file);
     });
 }
 
-function compressVideo(file) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(file);
+function saveMediaToDB(id, dataUrl) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(['media'], 'readwrite');
+        tx.objectStore('media').put({ id, dataUrl });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
     });
 }
 
-// ============ FUNÇÕES DE DADOS ============
-function getKey(catId, idx) { return catId + '-' + idx; }
+function getMediaFromDB(id) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(['media'], 'readonly');
+        const request = tx.objectStore('media').get(id);
+        request.onsuccess = () => resolve(request.result ? request.result.dataUrl : null);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+function deleteMediaFromDB(id) {
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(['media'], 'readwrite');
+        tx.objectStore('media').delete(id);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+// ==================== STATE ====================
+let currentCategory = null;
+let currentItemIdx = null;
 
 function ensureItem(catId, idx) {
-    const key = getKey(catId, idx);
-    if (!checklistData[key] || typeof checklistData[key] !== 'object' || Array.isArray(checklistData[key])) {
-        checklistData[key] = { status: null, photos: [], audios: [], videos: [] };
+    const key = `${catId}_${idx}`;
+    if (!window._data[key]) {
+        window._data[key] = { checked: false, photos: [], audios: [], obs: '' };
     }
-    const item = checklistData[key];
-    if (!Array.isArray(item.photos)) item.photos = [];
-    if (!Array.isArray(item.audios)) item.audios = [];
-    if (!Array.isArray(item.videos)) item.videos = [];
-    return item;
+    return window._data[key];
 }
 
-// ============ RENDERIZAÇÃO ============
-function renderTabs() {
-    document.getElementById('tabs').innerHTML = categories.map(c =>
-        '<button class="tab" data-cat="' + c.id + '" onclick="switchTab(\'' + c.id + '\')">' + c.icon + ' ' + c.name + '</button>'
-    ).join('');
-}
-
-function renderAllSections() {
-    const contentEl = document.getElementById('content');
-    let html = '';
-    categories.forEach(c => {
-        html += '<div class="section" id="section-' + c.id + '">';
-        html += '<div class="section-title">' + c.icon + ' ' + c.name + '</div>';
-        c.items.forEach((item, idx) => { html += renderItem(c.id, idx, item); });
-        if (c.id === categories[categories.length - 1].id) html += renderClassification();
-        html += '</div>';
+// ==================== COMPRESS IMAGE ====================
+function compressImage(dataUrl, maxWidth = 1280, quality = 0.7) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            let w = img.width, h = img.height;
+            if (w > maxWidth) { h = (maxWidth / w) * h; w = maxWidth; }
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = dataUrl;
     });
-    contentEl.innerHTML = html;
+}
+
+// ==================== RENDER ====================
+function renderCategories() {
+    const container = document.getElementById('categories');
+    container.innerHTML = '';
+    categories.forEach((cat, ci) => {
+        const div = document.createElement('div');
+        div.className = 'category';
+        div.innerHTML = `
+            <div class="category-header" onclick="toggleCategory(${ci})">
+                <span>${cat.name}</span>
+                <span class="arrow">▶</span>
+            </div>
+            <div class="category-items" id="catItems_${ci}">
+                ${cat.items.map((item, idx) => renderItem(cat.id, idx, item)).join('')}
+            </div>
+        `;
+        container.appendChild(div);
+    });
 }
 
 function renderItem(catId, idx, label) {
-    const data = ensureItem(catId, idx);
-    const key = getKey(catId, idx);
-    const statusClass = data.status ? 'status-' + data.status : '';
-    const evidenceShow = (data.status === 'repair' || data.status === 'critical') ? 'show' : '';
-
-    let mediaHTML = '';
-    const hasMedia = data.photos.length > 0 || data.audios.length > 0 || data.videos.length > 0;
-    if (hasMedia) {
-        mediaHTML = '<div class="evidence-media">';
-        data.videos.forEach((videoId, vIdx) => {
-            mediaHTML +=
-                '<div class="media-item" style="background:#000;">' +
-                '<video id="video-' + videoId + '" data-videoid="' + videoId + '" ' +
-                'onclick="event.stopPropagation();loadAndPlayVideo(\'' + videoId + '\')" ' +
-                'muted playsinline preload="none" style="width:100%;height:100%;object-fit:cover;cursor:pointer;"></video>' +
-                '<button class="media-remove" onclick="event.stopPropagation();removeVideo(\'' + catId + '\',' + idx + ',' + vIdx + ')">×</button>' +
-                '</div>';
-        });
-        data.photos.forEach((photoId, pIdx) => {
-            const placeholder = 'data:image/svg+xml,' + encodeURIComponent(
-                '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect fill="#334155" width="64" height="64"/><text x="32" y="40" text-anchor="middle" fill="#94a3b8" font-size="18">📷</text></svg>'
-            );
-            mediaHTML +=
-                '<div class="media-item">' +
-                '<img src="' + placeholder + '" id="img-' + photoId + '" data-photoid="' + photoId + '" ' +
-                'onclick="event.stopPropagation();loadAndShowPhoto(\'' + photoId + '\')" ' +
-                'onerror="this.onerror=null;this.src=\'' + placeholder + '\'" loading="lazy">' +
-                '<button class="media-remove" onclick="event.stopPropagation();removePhoto(\'' + catId + '\',' + idx + ',' + pIdx + ')">×</button>' +
-                '</div>';
-        });
-        data.audios.forEach((audioId, aIdx) => {
-            mediaHTML +=
-                '<div class="media-item audio" onclick="event.stopPropagation();playAudio(\'' + audioId + '\')">' +
-                '🎤' +
-                '<button class="media-remove" onclick="event.stopPropagation();removeAudio(\'' + catId + '\',' + idx + ',' + aIdx + ')">×</button>' +
-                '</div>';
-        });
-        mediaHTML += '</div>';
-    }
-
-    return '' +
-        '<div class="item ' + statusClass + '" id="item-' + key + '">' +
-            '<div class="item-label">' + label + '</div>' +
-            '<div class="status-buttons">' +
-                '<button class="status-btn ok ' + (data.status === 'ok' ? 'active' : '') + '" onclick="setStatus(\'' + catId + '\',' + idx + ',\'ok\')">✅ Bom</button>' +
-                '<button class="status-btn repair ' + (data.status === 'repair' ? 'active' : '') + '" onclick="setStatus(\'' + catId + '\',' + idx + ',\'repair\')">🔧 Reparo</button>' +
-                '<button class="status-btn critical ' + (data.status === 'critical' ? 'active' : '') + '" onclick="setStatus(\'' + catId + '\',' + idx + ',\'critical\')">⚠️ Crítico</button>' +
-            '</div>' +
-            '<div class="evidence ' + evidenceShow + '">' +
-                '<div class="evidence-title">📸 Adicionar evidências:</div>' +
-                '<div class="evidence-buttons">' +
-                    '<button class="ev-btn photo" onclick="capturePhoto(\'' + catId + '\',' + idx + ')">📷 Foto</button>' +
-                    '<button class="ev-btn video" onclick="captureVideo(\'' + catId + '\',' + idx + ')">📹 Vídeo</button>' +
-                    '<button class="ev-btn voice" onclick="captureAudio(\'' + catId + '\',' + idx + ')">🎤 Áudio</button>' +
-                '</div>' +
-                mediaHTML +
-            '</div>' +
-        '</div>';
-}
-
-function renderClassification() {
-    const greenClass = generalClassification === 'green' ? 'active-green' : '';
-    const yellowClass = generalClassification === 'yellow' ? 'active-yellow' : '';
-    const redClass = generalClassification === 'red' ? 'active-red' : '';
-    return '' +
-        '<div class="classification-section">' +
-            '<div class="classification-title">🏁 Classificação Geral</div>' +
-            '<div class="classification-buttons">' +
-                '<button class="class-btn ' + greenClass + '" onclick="setClassification(\'green\')">🟢 Bom</button>' +
-                '<button class="class-btn ' + yellowClass + '" onclick="setClassification(\'yellow\')">🟡 Atenção</button>' +
-                '<button class="class-btn ' + redClass + '" onclick="setClassification(\'red\')">🔴 Crítico</button>' +
-            '</div>' +
-        '</div>';
+    const itemData = ensureItem(catId, idx);
+    const hasPhoto = itemData.photos.length > 0;
+    const hasAudio = itemData.audios.length > 0;
+    const hasObs = itemData.obs && itemData.obs.trim().length > 0;
+    return `
+        <div class="item" id="item_${catId}_${idx}">
+            <input type="checkbox" class="item-checkbox" ${itemData.checked ? 'checked' : ''} onchange="toggleCheck('${catId}', ${idx})">
+            <span class="item-label" onclick="toggleCheck('${catId}', ${idx})">${label}</span>
+            <div class="item-actions">
+                ${hasObs ? '<div class="obs-indicator" title="Tem observação">!</div>' : ''}
+                <button class="btn-icon ${hasPhoto ? 'has-photo' : ''}" onclick="openMediaModal('${catId}', ${idx})" title="Mídias">
+                    ${hasPhoto ? '📷' : '📷'}
+                </button>
+                <button class="btn-icon ${hasAudio ? 'has-audio' : ''}" onclick="openObsModal('${catId}', ${idx})" title="Observação">
+                    📝
+                </button>
+            </div>
+        </div>
+    `;
 }
 
 function refreshItem(catId, idx) {
     const cat = categories.find(c => c.id === catId);
-    if (!cat) return;
-    const label = cat.items[idx];
-    const key = getKey(catId, idx);
-    const oldEl = document.getElementById('item-' + key);
-    if (oldEl) {
-        oldEl.outerHTML = renderItem(catId, idx, label);
-        loadItemImages(catId, idx);
-        loadItemVideos(catId, idx);
-    }
-}
-
-async function loadItemImages(catId, idx) {
-    const data = ensureItem(catId, idx);
-    for (const photoId of data.photos) {
-        const imgEl = document.getElementById('img-' + photoId);
-        if (!imgEl) continue;
-        if (imgEl.src && imgEl.src.includes('svg+xml')) {
-            try { const d = await getMediaFromDB(photoId); if (d) imgEl.src = d; } catch (e) {}
-        }
-    }
-}
-
-async function loadItemVideos(catId, idx) {
-    const data = ensureItem(catId, idx);
-    for (const videoId of data.videos) {
-        const videoEl = document.getElementById('video-' + videoId);
-        if (!videoEl) continue;
-        if (!videoEl.src || videoEl.src === window.location.href) {
-            try { const d = await getMediaFromDB(videoId); if (d) { videoEl.src = d; videoEl.load(); } } catch (e) {}
-        }
-    }
-}
-
-async function loadMediaForSection(catId) {
-    const cat = categories.find(c => c.id === catId);
-    if (!cat) return;
-    for (let idx = 0; idx < cat.items.length; idx++) {
-        const data = ensureItem(catId, idx);
-        for (const photoId of data.photos) {
-            const imgEl = document.getElementById('img-' + photoId);
-            if (!imgEl) continue;
-            if (imgEl.src && imgEl.src.includes('svg+xml')) {
-                try { const d = await getMediaFromDB(photoId); if (d) imgEl.src = d; } catch (e) {}
-            }
-        }
-        for (const videoId of data.videos) {
-            const videoEl = document.getElementById('video-' + videoId);
-            if (!videoEl) continue;
-            if (!videoEl.src || videoEl.src === window.location.href) {
-                try { const d = await getMediaFromDB(videoId); if (d) { videoEl.src = d; videoEl.load(); } } catch (e) {}
-            }
-        }
-        if (idx % 3 === 2) await new Promise(r => setTimeout(r, 50));
-    }
-}
-
-function switchTab(catId) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    const section = document.getElementById('section-' + catId);
-    const tab = document.querySelector('[data-cat="' + catId + '"]');
-    if (section) section.classList.add('active');
-    if (tab) tab.classList.add('active');
-    loadMediaForSection(catId);
-    if (tab) tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-}
-
-function setStatus(catId, idx, status) {
-    const data = ensureItem(catId, idx);
-    data.status = status;
-    refreshItem(catId, idx);
+    const el = document.getElementById(`item_${catId}_${idx}`);
+    if (el) el.outerHTML = renderItem(catId, idx, cat.items[idx]);
     updateProgress();
-    saveData();
 }
 
-function setClassification(value) {
-    generalClassification = value;
-    const lastSection = document.getElementById('section-' + categories[categories.length - 1].id);
-    const oldClass = lastSection.querySelector('.classification-section');
-    if (oldClass) oldClass.outerHTML = renderClassification();
-    saveData();
+function toggleCategory(ci) {
+    const header = document.querySelector(`#categories .category:nth-child(${ci + 1}) .category-header`);
+    const items = document.getElementById(`catItems_${ci}`);
+    header.classList.toggle('open');
+    items.classList.toggle('show');
+}
+
+function toggleCheck(catId, idx) {
+    const itemData = ensureItem(catId, idx);
+    itemData.checked = !itemData.checked;
+    const checkbox = document.querySelector(`#item_${catId}_${idx} .item-checkbox`);
+    if (checkbox) checkbox.checked = itemData.checked;
+    updateProgress();
 }
 
 function updateProgress() {
-    let total = 0, done = 0;
-    categories.forEach(c => {
-        c.items.forEach((_, idx) => {
+    let total = 0, checked = 0;
+    categories.forEach(cat => {
+        cat.items.forEach((_, idx) => {
             total++;
-            const data = ensureItem(c.id, idx);
-            if (data.status) done++;
+            if (ensureItem(cat.id, idx).checked) checked++;
         });
     });
-    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const pct = total > 0 ? (checked / total) * 100 : 0;
     document.getElementById('progressFill').style.width = pct + '%';
-    document.getElementById('progressText').textContent = done + '/' + total + ' (' + pct + '%)';
+    document.getElementById('progressText').textContent = `${checked}/${total}`;
 }
 
-// ============ CAPTURA DE MÍDIA ============
-function captureAudio(catId, idx) {
-    currentAudioTarget = { catId, idx };
-    document.getElementById('audioInput').click();
+// ==================== MEDIA MODAL ====================
+async function openMediaModal(catId, idx) {
+    currentCategory = catId;
+    currentItemIdx = idx;
+    const cat = categories.find(c => c.id === catId);
+    document.getElementById('mediaModalTitle').textContent = cat.items[idx];
+    await renderMediaModal();
+    document.getElementById('mediaModal').classList.add('show');
 }
 
-async function handleAudioSelected(e) {
-    const file = e.target.files[0];
-    if (!file || !currentAudioTarget) return;
-    try {
-        showToast(' Processando áudio...');
-        const reader = new FileReader();
-        reader.onload = async function(ev) {
-            const audioId = 'audio-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-            await saveMediaToDB(audioId, ev.target.result);
-            const data = ensureItem(currentAudioTarget.catId, currentAudioTarget.idx);
-            data.audios.push(audioId);
-            refreshItem(currentAudioTarget.catId, currentAudioTarget.idx);
-            saveData();
-            showToast('🎤 Áudio salvo!');
-            currentAudioTarget = null;
-        };
-        reader.onerror = () => { showToast('❌ Erro ao ler áudio'); currentAudioTarget = null; };
-        reader.readAsDataURL(file);
-    } catch (err) {
-        console.error('Erro:', err);
-        showToast('❌ Erro ao salvar áudio');
-        currentAudioTarget = null;
-    }
-    e.target.value = '';
-}
+async function renderMediaModal() {
+    const itemData = ensureItem(currentCategory, currentItemIdx);
+    const photoGrid = document.getElementById('photoGrid');
+    const audioList = document.getElementById('audioList');
 
-async function playAudio(audioId) {
-    const audioData = await getMediaFromDB(audioId);
-    if (audioData) {
-        const audio = new Audio(audioData);
-        audio.play().catch(() => showToast('❌ Não foi possível reproduzir'));
-    } else {
-        showToast('❌ Áudio não encontrado');
-    }
-}
-
-async function removeAudio(catId, idx, audioIdx) {
-    const data = ensureItem(catId, idx);
-    const audioId = data.audios[audioIdx];
-    await deleteMediaFromDB(audioId);
-    data.audios.splice(audioIdx, 1);
-    refreshItem(catId, idx);
-    saveData();
-    showToast('🗑️ Áudio removido');
-}
-
-function capturePhoto(catId, idx) {
-    currentPhotoTarget = { catId, idx };
-    document.getElementById('photoInput').click();
-}
-
-async function handlePhotoSelected(e) {
-    const file = e.target.files[0];
-    if (!file || !currentPhotoTarget) return;
-    try {
-        showToast(' Processando foto...');
-        const compressed = await compressImage(file);
-        if (!compressed) { showToast('❌ Erro ao processar foto'); currentPhotoTarget = null; e.target.value = ''; return; }
-        const photoId = 'photo-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        loadedImages[photoId] = compressed;
-        await saveMediaToDB(photoId, compressed);
-        const data = ensureItem(currentPhotoTarget.catId, currentPhotoTarget.idx);
-        data.photos.push(photoId);
-        refreshItem(currentPhotoTarget.catId, currentPhotoTarget.idx);
-        saveData();
-        showToast('📷 Foto salva!');
-        currentPhotoTarget = null;
-    } catch (err) {
-        console.error('Erro:', err);
-        showToast('❌ Erro ao salvar foto');
-        currentPhotoTarget = null;
-    }
-    e.target.value = '';
-}
-
-async function removePhoto(catId, idx, photoIdx) {
-    const data = ensureItem(catId, idx);
-    const photoId = data.photos[photoIdx];
-    await deleteMediaFromDB(photoId);
-    data.photos.splice(photoIdx, 1);
-    refreshItem(catId, idx);
-    saveData();
-    showToast('🗑️ Foto removida');
-}
-
-async function loadAndShowPhoto(photoId) {
-    const dataUrl = await getMediaFromDB(photoId);
-    if (dataUrl) {
-        const win = window.open('', '_blank');
-        if (win) {
-            win.document.write('<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;}img{max-width:100%;max-height:100vh;}</style></head><body><img src="' + dataUrl + '"></body></html>');
-        } else { showToast('❌ Pop-up bloqueado'); }
-    }
-}
-
-// ============ CAPTURA DE VÍDEO ============
-function captureVideo(catId, idx) {
-    currentVideoTarget = { catId, idx };
-    document.getElementById('videoInput').click();
-}
-
-async function handleVideoSelected(e) {
-    const file = e.target.files[0];
-    if (!file || !currentVideoTarget) return;
-    const fileSizeMB = file.size / (1024 * 1024);
-    showToast('⏳ Processando vídeo (' + Math.round(fileSizeMB) + 'MB)...');
-    try {
-        const compressed = await compressVideo(file);
-        if (!compressed) { showToast('❌ Erro ao processar vídeo'); currentVideoTarget = null; e.target.value = ''; return; }
-        const videoId = 'video-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-        loadedImages[videoId] = compressed;
-        await saveMediaToDB(videoId, compressed);
-        const data = ensureItem(currentVideoTarget.catId, currentVideoTarget.idx);
-        data.videos.push(videoId);
-        refreshItem(currentVideoTarget.catId, currentVideoTarget.idx);
-        saveData();
-        showToast('📹 Vídeo salvo!');
-        currentVideoTarget = null;
-    } catch (err) {
-        console.error('Erro:', err);
-        showToast('❌ Erro ao salvar vídeo');
-        currentVideoTarget = null;
-    }
-    e.target.value = '';
-}
-
-async function loadAndPlayVideo(videoId) {
-    const dataUrl = await getMediaFromDB(videoId);
-    if (dataUrl) {
-        const win = window.open('', '_blank');
-        if (win) {
-            win.document.write(
-                '<html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;}video{max-width:100%;max-height:100vh;}</style></head><body>' +
-                '<video controls autoplay playsinline src="' + dataUrl + '"></video></body></html>'
-            );
-        } else {
-            const videoEl = document.getElementById('video-' + videoId);
-            if (videoEl) { videoEl.src = dataUrl; videoEl.load(); videoEl.play(); }
-            showToast('📹 Tocando vídeo');
+    // Fotos
+    let photosHTML = '';
+    for (const photoId of itemData.photos) {
+        const dataUrl = await getMediaFromDB(photoId);
+        if (dataUrl) {
+            photosHTML += `
+                <div class="photo-thumb">
+                    <img src="${dataUrl}" alt="Foto">
+                    <button class="remove" onclick="removePhoto('${photoId}')">×</button>
+                </div>
+            `;
         }
-    } else { showToast('❌ Vídeo não encontrado'); }
+    }
+    photoGrid.innerHTML = photosHTML || '<p style="grid-column:1/-1;text-align:center;color:#8e8e93;font-size:13px;">Nenhuma foto</p>';
+
+    // Áudios
+    let audiosHTML = '';
+    for (const audioId of itemData.audios) {
+        const dataUrl = await getMediaFromDB(audioId);
+        if (dataUrl) {
+            audiosHTML += `
+                <div class="audio-item">
+                    <audio controls src="${dataUrl}"></audio>
+                    <button class="remove" onclick="removeAudio('${audioId}')">×</button>
+                </div>
+            `;
+        }
+    }
+    audioList.innerHTML = audiosHTML;
 }
 
-async function removeVideo(catId, idx, videoIdx) {
-    const data = ensureItem(catId, idx);
-    const videoId = data.videos[videoIdx];
-    await deleteMediaFromDB(videoId);
-    data.videos.splice(videoIdx, 1);
-    refreshItem(catId, idx);
-    saveData();
-    showToast('🗑️ Vídeo removido');
+async function handlePhotoSelected(event) {
+    const files = event.target.files;
+    if (!files.length) return;
+    const itemData = ensureItem(currentCategory, currentItemIdx);
+
+    for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const compressed = await compressImage(e.target.result);
+            const id = 'photo_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+            await saveMediaToDB(id, compressed);
+            itemData.photos.push(id);
+            await renderMediaModal();
+            refreshItem(currentCategory, currentItemIdx);
+        };
+        reader.readAsDataURL(file);
+    }
+    event.target.value = '';
 }
 
-// ============ OBSERVAÇÕES ============
-function openObsModal() {
-    document.getElementById('obsText').value = generalObs;
+async function handleAudioSelected(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const itemData = ensureItem(currentCategory, currentItemIdx);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const id = 'audio_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        await saveMediaToDB(id, e.target.result);
+        itemData.audios.push(id);
+        await renderMediaModal();
+        refreshItem(currentCategory, currentItemIdx);
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+}
+
+async function removePhoto(photoId) {
+    const itemData = ensureItem(currentCategory, currentItemIdx);
+    itemData.photos = itemData.photos.filter(id => id !== photoId);
+    await deleteMediaFromDB(photoId);
+    await renderMediaModal();
+    refreshItem(currentCategory, currentItemIdx);
+}
+
+async function removeAudio(audioId) {
+    const itemData = ensureItem(currentCategory, currentItemIdx);
+    itemData.audios = itemData.audios.filter(id => id !== audioId);
+    await deleteMediaFromDB(audioId);
+    await renderMediaModal();
+    refreshItem(currentCategory, currentItemIdx);
+}
+
+// ==================== OBS ====================
+function openObsModal(catId, idx) {
+    currentCategory = catId;
+    currentItemIdx = idx;
+    const itemData = ensureItem(catId, idx);
+    document.getElementById('obsText').value = itemData.obs || '';
     document.getElementById('obsModal').classList.add('show');
-    document.body.classList.add('no-scroll');
 }
 
 function saveObs() {
-    generalObs = document.getElementById('obsText').value;
-    saveData();
+    const itemData = ensureItem(currentCategory, currentItemIdx);
+    itemData.obs = document.getElementById('obsText').value;
     closeModal('obsModal');
-    showToast('📝 Observação salva');
+    refreshItem(currentCategory, currentItemIdx);
+    showToast('✅ Observação salva');
 }
 
-function closeModal(id) {
-    document.getElementById(id).classList.remove('show');
-    document.body.classList.remove('no-scroll');
+// ==================== SAVE / LOAD ====================
+function saveData() {
+    const data = {
+        cliente: document.getElementById('cliente').value,
+        veiculo: document.getElementById('veiculo').value,
+        placa: document.getElementById('placa').value,
+        km: document.getElementById('km').value,
+        items: window._data
+    };
+    localStorage.setItem('checklist_data', JSON.stringify(data));
+    showToast('💾 Dados salvos!');
 }
 
-// ============================================================
-// 📄 RELATÓRIO
-// ============================================================
+function loadData() {
+    const saved = localStorage.getItem('checklist_data');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            document.getElementById('cliente').value = data.cliente || '';
+            document.getElementById('veiculo').value = data.veiculo || '';
+            document.getElementById('placa').value = data.placa || '';
+            document.getElementById('km').value = data.km || '';
+            window._data = data.items || {};
+        } catch (e) {
+            window._data = {};
+        }
+    } else {
+        window._data = {};
+    }
+}
+
+async function resetAllData() {
+    if (!confirm('Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.')) return;
+
+    // Limpar mídias do IndexedDB
+    if (db) {
+        const tx = db.transaction(['media'], 'readwrite');
+        tx.objectStore('media').clear();
+    }
+
+    localStorage.removeItem('checklist_data');
+    window._data = {};
+    document.getElementById('cliente').value = '';
+    document.getElementById('veiculo').value = '';
+    document.getElementById('placa').value = '';
+    document.getElementById('km').value = '';
+    renderCategories();
+    updateProgress();
+    showToast('🗑️ Dados limpos!');
+}
+
+// ==================== RELATÓRIO (com cache de mídias em chunks) ====================
 async function generateReport() {
     const btn = document.getElementById('btnReport');
     btn.disabled = true;
@@ -898,202 +583,53 @@ async function generateReport() {
         const data = new Date().toLocaleDateString('pt-BR');
         const hora = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
 
+        // ✅ CORREÇÃO: declara 'dados' ANTES de usar
+        const dados = { cliente, veiculo, placa, km, data, hora };
+
         showToast('📦 Carregando evidências...');
-
-        window._reportMediaCache = {};
-
-        const allMediaIds = [];
+        const mediaCache = {};
         for (const c of categories) {
             for (let idx = 0; idx < c.items.length; idx++) {
                 const itemData = ensureItem(c.id, idx);
-                for (const id of itemData.photos) allMediaIds.push({ id, type: 'photo' });
-                for (const id of itemData.audios) allMediaIds.push({ id, type: 'audio' });
-                for (const id of itemData.videos) allMediaIds.push({ id, type: 'video' });
+                for (const photoId of itemData.photos) {
+                    if (!mediaCache[photoId]) {
+                        const dataUrl = await getMediaFromDB(photoId);
+                        if (dataUrl) mediaCache[photoId] = dataUrl;
+                    }
+                }
+                for (const audioId of itemData.audios) {
+                    if (!mediaCache[audioId]) {
+                        const dataUrl = await getMediaFromDB(audioId);
+                        if (dataUrl) mediaCache[audioId] = dataUrl;
+                    }
+                }
             }
         }
 
-        for (let i = 0; i < allMediaIds.length; i++) {
-            const entry = allMediaIds[i];
-            if (!window._reportMediaCache[entry.id]) {
-                const dataUrl = await getMediaFromDB(entry.id);
-                if (dataUrl) window._reportMediaCache[entry.id] = dataUrl;
-            }
-            if (i % 3 === 2) await new Promise(r => setTimeout(r, 30));
-        }
+        const bodyHTML = generateReportBody(dados, mediaCache, false);
+        window._mediaCache = mediaCache;
+        window._reportDados = dados;
 
-        let totalPhotos = 0, totalAudios = 0, totalVideos = 0;
-        let reportHTML = '<div class="report-wrap">';
-
-        reportHTML +=
-            '<div class="rp-header">' +
-                '<h2>📋 RELATÓRIO DE CHECKLIST</h2>' +
-                '<p>Mecânica Brasil — ' + data + ' às ' + hora + '</p>' +
-            '</div>';
-
-        reportHTML +=
-            '<div class="rp-info">' +
-                '<div class="rp-info-row"><span>Cliente</span><span>' + cliente + '</span></div>' +
-                '<div class="rp-info-row"><span>Veículo</span><span>' + veiculo + '</span></div>' +
-                '<div class="rp-info-row"><span>Placa</span><span>' + placa + '</span></div>' +
-                '<div class="rp-info-row"><span>KM</span><span>' + km + '</span></div>' +
-            '</div>';
-
+        let totalPhotos = 0, totalAudios = 0;
         for (const c of categories) {
-            let hasAnyStatus = false;
             for (let idx = 0; idx < c.items.length; idx++) {
                 const itemData = ensureItem(c.id, idx);
-                if (itemData.status || itemData.photos.length > 0 || itemData.audios.length > 0 || itemData.videos.length > 0) {
-                    hasAnyStatus = true; break;
-                }
+                totalPhotos += itemData.photos.length;
+                totalAudios += itemData.audios.length;
             }
-            if (!hasAnyStatus) continue;
-
-            reportHTML += '<div class="rp-category">';
-            reportHTML += '<h3>' + c.icon + ' ' + c.name + '</h3>';
-
-            for (let idx = 0; idx < c.items.length; idx++) {
-                const item = c.items[idx];
-                const itemData = ensureItem(c.id, idx);
-                if (!itemData.status && itemData.photos.length === 0 && itemData.audios.length === 0 && itemData.videos.length === 0) continue;
-
-                let icon = '';
-                if (itemData.status === 'ok') icon = '✅';
-                else if (itemData.status === 'repair') icon = '';
-                else if (itemData.status === 'critical') icon = '⚠️';
-
-                reportHTML += '<div class="rp-item">';
-                reportHTML += '<span class="rp-item-icon">' + icon + '</span>';
-                reportHTML += '<span>' + item + '</span></div>';
-
-                if (itemData.photos.length > 0 || itemData.audios.length > 0 || itemData.videos.length > 0) {
-                    reportHTML += '<div class="rp-media-grid">';
-
-                    for (const photoId of itemData.photos) {
-                        const dataUrl = window._reportMediaCache[photoId];
-                        if (dataUrl) {
-                            const fname = 'foto_' + photoId + '.jpg';
-                            reportHTML += '<div class="rp-media-card">';
-                            reportHTML += '<img src="' + dataUrl + '" class="rp-photo" alt="Foto">';
-                            reportHTML += '<div class="rp-media-actions">';
-                            reportHTML += '<button class="rp-action-btn rp-btn-download" onclick="window.downloadMediaById(\'' + photoId + '\',\'' + fname + '\')">💾 Baixar</button>';
-                            reportHTML += '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaById(\'' + photoId + '\',\'' + fname + '\',\'image/jpeg\')">📤 Enviar</button>';
-                            reportHTML += '</div>';
-                            reportHTML += '</div>';
-                            totalPhotos++;
-                        }
-                    }
-
-                    for (const videoId of itemData.videos) {
-                        const dataUrl = window._reportMediaCache[videoId];
-                        if (dataUrl) {
-                            const fname = 'video_' + videoId + '.mp4';
-                            reportHTML += '<div class="rp-video-wrap">';
-                            reportHTML += '<div class="rp-video-label"> Vídeo - ' + item + '</div>';
-                            reportHTML += '<video class="rp-video" controls preload="metadata" src="' + dataUrl + '"></video>';
-                            reportHTML += '<div class="rp-media-actions">';
-                            reportHTML += '<button class="rp-action-btn rp-btn-download" onclick="window.downloadMediaById(\'' + videoId + '\',\'' + fname + '\')">💾 Baixar</button>';
-                            reportHTML += '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaById(\'' + videoId + '\',\'' + fname + '\',\'video/mp4\')"> Enviar</button>';
-                            reportHTML += '</div>';
-                            reportHTML += '</div>';
-                            totalVideos++;
-                        }
-                    }
-
-                    for (const audioId of itemData.audios) {
-                        const dataUrl = window._reportMediaCache[audioId];
-                        if (dataUrl) {
-                            const fname = 'audio_' + audioId + '.webm';
-                            reportHTML +=
-                                '<div class="rp-audio-wrap">' +
-                                    '<div class="rp-audio-icon">🎤</div>' +
-                                    '<div style="flex:1;min-width:0;">' +
-                                        '<div class="rp-audio-label">Áudio - ' + item + '</div>' +
-                                        '<audio controls preload="metadata" src="' + dataUrl + '"></audio>' +
-                                        '<div class="rp-media-actions" style="margin-top:6px;">' +
-                                            '<button class="rp-action-btn rp-btn-download" onclick="window.downloadMediaById(\'' + audioId + '\',\'' + fname + '\')">💾 Baixar</button>' +
-                                            '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaById(\'' + audioId + '\',\'' + fname + '\',\'audio/webm\')">📤 Enviar</button>' +
-                                        '</div>' +
-                                    '</div>' +
-                                '</div>';
-                            totalAudios++;
-                        }
-                    }
-                    reportHTML += '</div>';
-                }
-            }
-            reportHTML += '</div>';
         }
+        window._reportStats = { totalPhotos, totalAudios };
 
-        const classLabel = generalClassification === 'green' ? ' Bom' :
-                           generalClassification === 'yellow' ? '🟡 Requer Atenção' :
-                           generalClassification === 'red' ? '🔴 Crítico' : '—';
+        const actionsHTML = '' +
+            '<button class="btn btn-primary" onclick="printReport()" style="width:100%;margin-top:8px;">🖨️ Imprimir / Salvar PDF</button>' +
+            '<button class="btn btn-secondary" onclick="shareReportHTML()" style="width:100%;margin-top:6px;">📤 Compartilhar</button>' +
+            '<button class="btn btn-secondary" onclick="downloadReportHTML()" style="width:100%;margin-top:6px;">💾 Baixar HTML</button>' +
+            '<button class="btn btn-secondary" onclick="closeModal(\'reportModal\')" style="width:100%;margin-top:6px;">Fechar</button>';
 
-        reportHTML +=
-            '<div class="rp-info">' +
-                '<div class="rp-info-row"><span>Classificação</span><span>' + classLabel + '</span></div>' +
-                '<div class="rp-info-row"><span>📷 Fotos</span><span>' + totalPhotos + '</span></div>' +
-                '<div class="rp-info-row"><span> Vídeos</span><span>' + totalVideos + '</span></div>' +
-                '<div class="rp-info-row"><span>🎤 Áudios</span><span>' + totalAudios + '</span></div>' +
-            '</div>';
-
-        if (generalObs) {
-            reportHTML +=
-                '<div class="rp-info">' +
-                    '<div style="font-weight:600;margin-bottom:6px;color:#f59e0b;">📝 Observações Gerais:</div>' +
-                    '<p style="padding:4px 0;white-space:pre-wrap;">' + generalObs + '</p>' +
-                '</div>';
-        }
-
-        reportHTML += '<div class="rp-footer">Mecânica Brasil © ' + new Date().getFullYear() + '</div>';
-        reportHTML += '</div>';
-
-        const reportStyle =
-            '<style>' +
-            '.report-wrap{color:#1e293b;font-size:13px;line-height:1.5}' +
-            '.rp-header{text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:3px solid #e11d48}' +
-            '.rp-header h2{font-size:18px;color:#0f172a;margin-bottom:4px}' +
-            '.rp-header p{color:#64748b;font-size:12px}' +
-            '.rp-info{background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:16px;border:1px solid #e2e8f0}' +
-            '.rp-info-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e2e8f0}' +
-            '.rp-info-row:last-child{border:none}' +
-            '.rp-info-row span:first-child{color:#64748b}' +
-            '.rp-info-row span:last-child{font-weight:600;color:#0f172a}' +
-            '.rp-category{margin-bottom:20px;page-break-inside:avoid}' +
-            '.rp-category h3{font-size:15px;color:#e11d48;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}' +
-            '.rp-item{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9;align-items:center}' +
-            '.rp-item-icon{font-size:14px;flex-shrink:0}' +
-            '.rp-media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin:10px 0 10px 22px;padding:12px;background:#f8fafc;border-radius:8px;border-left:3px solid #e11d48}' +
-            '.rp-media-card{position:relative}' +
-            '.rp-photo{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;border:1px solid #cbd5e1;cursor:pointer;display:block}' +
-            '.rp-video-wrap{grid-column:1/-1;background:#fef2f2;border-radius:8px;padding:12px;border:1px solid #fecaca}' +
-            '.rp-video-label{font-size:12px;color:#dc2626;margin-bottom:6px;font-weight:600}' +
-            '.rp-video{width:100%;max-height:300px;border-radius:6px;border:1px solid #cbd5e1;background:#000}' +
-            '.rp-audio-wrap{grid-column:1/-1;background:#eff6ff;border-radius:8px;padding:12px;display:flex;align-items:flex-start;gap:12px;border:1px solid #bfdbfe}' +
-            '.rp-audio-icon{width:42px;height:42px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;color:#fff}' +
-            '.rp-audio-label{font-size:11px;color:#64748b;margin-bottom:3px}' +
-            '.rp-audio-wrap audio{width:100%;height:34px}' +
-            '.rp-media-actions{display:flex;gap:4px;margin-top:6px}' +
-            '.rp-action-btn{flex:1;padding:8px 6px;border-radius:6px;border:none;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;transition:all .2s;-webkit-appearance:none;touch-action:manipulation}' +
-            '.rp-action-btn:active{transform:scale(.95);opacity:.8}' +
-            '.rp-btn-download{background:#475569;color:#fff}' +
-            '.rp-btn-whatsapp{background:#25D366;color:#fff}' +
-            '.rp-footer{text-align:center;color:#94a3b8;font-size:10px;margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0}' +
-            '</style>';
-
-        const actionsHTML =
-            '<div style="margin-top:16px;">' +
-                '<button class="btn btn-primary" onclick="printReport()" style="width:100%;margin-top:8px;">🖨️ Imprimir / Salvar PDF</button>' +
-                '<button class="btn btn-secondary" onclick="shareReportHTML()" style="width:100%;margin-top:6px;">📤 Compartilhar Arquivo Completo</button>' +
-                '<button class="btn btn-secondary" onclick="downloadReportHTML()" style="width:100%;margin-top:6px;">💾 Baixar Relatório (.html)</button>' +
-                '<button class="btn btn-secondary" onclick="closeModal(\'reportModal\')" style="width:100%;margin-top:6px;">Fechar</button>' +
-            '</div>';
-
-        document.getElementById('reportContent').innerHTML = reportStyle + reportHTML + actionsHTML;
+        document.getElementById('reportContent').innerHTML = bodyHTML + actionsHTML;
         document.getElementById('reportModal').classList.add('show');
-        document.body.classList.add('no-scroll');
 
-        window._reportData = { cliente, veiculo, placa, km, data, hora, totalPhotos, totalVideos, totalAudios };
-        window._reportHTMLBody = reportStyle + reportHTML;
+        window._reportHTML = bodyHTML;
 
         showToast('✅ Relatório gerado!');
     } catch (err) {
@@ -1105,270 +641,375 @@ async function generateReport() {
     }
 }
 
-function printReport() {
-    const htmlBody = window._reportHTMLBody;
-    const dados = window._reportData;
-    if (!htmlBody) return;
-    const fullHTML = buildFullReportHTML(htmlBody, dados);
-    const win = window.open('', '_blank');
-    if (!win) { showToast('❌ Pop-up bloqueado'); return; }
-    win.document.write(fullHTML);
-    win.document.close();
-    setTimeout(() => { win.focus(); win.print(); }, 800);
+function generateReportBody(dados, mediaCache, forExport) {
+    let html = `
+        <div class="report-header-info">
+            <div><strong>Cliente:</strong> ${dados.cliente}</div>
+            <div><strong>Veículo:</strong> ${dados.veiculo}</div>
+            <div><strong>Placa:</strong> ${dados.placa}</div>
+            <div><strong>KM:</strong> ${dados.km}</div>
+            <div><strong>Data:</strong> ${dados.data}</div>
+            <div><strong>Hora:</strong> ${dados.hora}</div>
+        </div>
+    `;
+
+    for (const cat of categories) {
+        let catHTML = '';
+        let hasItems = false;
+        for (let idx = 0; idx < cat.items.length; idx++) {
+            const itemData = ensureItem(cat.id, idx);
+            if (!itemData.checked && itemData.photos.length === 0 && itemData.audios.length === 0 && !itemData.obs) continue;
+            hasItems = true;
+
+            const statusClass = itemData.checked ? 'ok' : 'no';
+            const statusIcon = itemData.checked ? '✓' : '✗';
+
+            catHTML += `<div class="report-item">
+                <span class="status ${statusClass}">${statusIcon}</span>
+                <span>${cat.items[idx]}</span>
+            </div>`;
+
+            // Fotos — usa placeholder se for para exportação
+            if (itemData.photos.length > 0) {
+                catHTML += '<div class="report-photos">';
+                for (const photoId of itemData.photos) {
+                    if (forExport) {
+                        catHTML += `<div class="media-placeholder" data-media-id="${photoId}">📷</div>`;
+                    } else {
+                        const src = mediaCache[photoId] || '';
+                        catHTML += `<img src="${src}" alt="Foto" style="cursor:pointer;" onclick="window._downloadMediaById('${photoId}', 'foto_${photoId}.jpg')">`;
+                    }
+                }
+                catHTML += '</div>';
+                // Botões de download individual (preview)
+                if (!forExport) {
+                    catHTML += '<div style="margin-left:22px;margin-top:2px;">';
+                    for (const photoId of itemData.photos) {
+                        catHTML += `<button class="media-download-btn" onclick="window._downloadMediaById('${photoId}', 'foto_${photoId}.jpg')">⬇️ ${photoId.substring(0,12)}</button>`;
+                    }
+                    catHTML += '</div>';
+                }
+            }
+
+            // Áudios — usa placeholder se for para exportação
+            if (itemData.audios.length > 0) {
+                catHTML += '<div class="report-audios">';
+                for (const audioId of itemData.audios) {
+                    if (forExport) {
+                        catHTML += `<div class="media-placeholder" data-media-id="${audioId}" style="width:auto;padding:4px 8px;font-size:12px;">🎵 Áudio</div>`;
+                    } else {
+                        const src = mediaCache[audioId] || '';
+                        catHTML += `<audio controls src="${src}"></audio>`;
+                    }
+                }
+                catHTML += '</div>';
+                if (!forExport) {
+                    catHTML += '<div style="margin-left:22px;margin-top:2px;">';
+                    for (const audioId of itemData.audios) {
+                        catHTML += `<button class="media-download-btn" onclick="window._downloadMediaById('${audioId}', 'audio_${audioId}.wav')">⬇️ ${audioId.substring(0,12)}</button>`;
+                    }
+                    catHTML += '</div>';
+                }
+            }
+
+            if (itemData.obs) {
+                catHTML += `<div class="report-obs">📝 ${itemData.obs}</div>`;
+            }
+        }
+
+        if (hasItems) {
+            html += `<div class="report-section"><h4>${cat.name}</h4>${catHTML}</div>`;
+        }
+    }
+
+    return html;
 }
 
-function downloadReportHTML() {
-    const htmlBody = window._reportHTMLBody;
-    const dados = window._reportData;
-    if (!htmlBody) { showToast('❌ Gere o relatório primeiro'); return; }
-    const fullHTML = buildFullReportHTML(htmlBody, dados);
-    const fileName = 'checklist_' + (dados.cliente || 'cliente').replace(/\s+/g, '_') + '_' + (dados.placa || 'placa').replace(/\s+/g, '_') + '_' + new Date().toISOString().split('T')[0] + '.html';
-    const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
-    showToast('💾 Relatório baixado!');
+// ==================== BUILD STANDALONE HTML (com chunks) ====================
+function buildStandaloneHTML(bodyHTML, mediaCache, dados, stats) {
+    // Serializa o cache de mídias em base64 e divide em chunks
+    const jsonString = JSON.stringify(mediaCache);
+    const encoder = new TextEncoder();
+    const uint8 = encoder.encode(jsonString);
+    // Converte para base64
+    let binary = '';
+    for (let i = 0; i < uint8.length; i++) {
+        binary += String.fromCharCode(uint8[i]);
+    }
+    const base64Full = btoa(binary);
+
+    // Divide em chunks de ~400KB cada
+    const CHUNK_SIZE = 400000;
+    const chunks = [];
+    for (let i = 0; i < base64Full.length; i += CHUNK_SIZE) {
+        chunks.push(base64Full.substring(i, i + CHUNK_SIZE));
+    }
+
+    // Gera as tags de chunk
+    let chunksHTML = '';
+    chunks.forEach((chunk, idx) => {
+        chunksHTML += `<script type="application/json" id="__mb_media_chunk_${idx}__">${chunk}<\/script>\n`;
+    });
+
+    const totalChunks = chunks.length;
+
+    return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklist Veicular - ${dados.cliente}</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: #1c1c1e; padding: 16px; }
+h1 { text-align: center; color: #007AFF; margin-bottom: 16px; font-size: 20px; }
+.report-header-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px; margin-bottom: 20px; padding: 16px; background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.report-header-info div { padding: 4px 0; }
+.report-header-info strong { color: #3a3a3c; }
+.report-section { background: white; margin-bottom: 12px; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.report-section h4 { font-size: 15px; color: #007AFF; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid #e5e5ea; }
+.report-item { padding: 6px 0; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.report-item .status { width: 18px; height: 18px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; color: white; flex-shrink: 0; }
+.report-item .status.ok { background: #34C759; }
+.report-item .status.no { background: #FF3B30; }
+.report-photos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; margin-left: 26px; }
+.report-photos img { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; cursor: pointer; transition: transform 0.2s; }
+.report-photos img:hover { transform: scale(1.05); }
+.report-audios { margin-top: 6px; margin-left: 26px; }
+.report-audios audio { height: 32px; margin-bottom: 6px; width: 100%; max-width: 300px; }
+.report-obs { font-size: 13px; color: #666; font-style: italic; margin-left: 26px; margin-top: 4px; }
+.media-placeholder { width: 80px; height: 80px; object-fit: cover; border-radius: 6px; background: #e5e5ea; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; color: #8e8e93; }
+.media-placeholder.loaded { background: transparent; width: auto; height: auto; font-size: inherit; }
+.media-download-btn { display: inline-block; margin: 2px; padding: 6px 10px; background: #007AFF; color: white; border-radius: 8px; font-size: 12px; cursor: pointer; text-decoration: none; border: none; }
+.media-download-btn:active { background: #0051D5; }
+.btn-download-all { display: block; width: 100%; padding: 14px; margin-top: 12px; margin-bottom: 12px; background: #34C759; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.btn-download-all:active { background: #248a3d; }
+.loading-msg { text-align: center; padding: 20px; color: #007AFF; font-weight: 600; }
+@media print { .btn-download-all, .media-download-btn { display: none !important; } }
+</style>
+</head>
+<body>
+
+<h1>🚗 Checklist Veicular</h1>
+
+${bodyHTML}
+
+<button class="btn-download-all" onclick="window._downloadAllMedia()">⬇️ Baixar Todas as Mídias (${stats.totalPhotos} fotos, ${stats.totalAudios} áudios)</button>
+
+<!-- Chunks de mídia em base64 -->
+${chunksHTML}
+
+<script>
+(function() {
+    var totalChunks = ${totalChunks};
+    var mediaCache = {};
+
+    function loadMediaChunks() {
+        var base64Full = '';
+        for (var i = 0; i < totalChunks; i++) {
+            var el = document.getElementById('__mb_media_chunk_' + i + '__');
+            if (el) {
+                base64Full += el.textContent || el.innerText || '';
+            }
+        }
+        if (!base64Full) return;
+
+        // Decodifica base64 -> JSON
+        try {
+            var binary = atob(base64Full);
+            var len = binary.length;
+            var bytes = new Uint8Array(len);
+            for (var j = 0; j < len; j++) {
+                bytes[j] = binary.charCodeAt(j);
+            }
+            var decoder = new TextDecoder('utf-8');
+            var jsonStr = decoder.decode(bytes);
+            mediaCache = JSON.parse(jsonStr);
+        } catch(e) {
+            // Fallback
+            try {
+                mediaCache = JSON.parse(decodeURIComponent(escape(atob(base64Full))));
+            } catch(e2) {
+                console.error('Erro ao decodificar mídias:', e2);
+                return;
+            }
+        }
+
+        // Popula placeholders
+        populateMedia();
+    }
+
+    function populateMedia() {
+        var placeholders = document.querySelectorAll('.media-placeholder[data-media-id]');
+        placeholders.forEach(function(ph) {
+            var mediaId = ph.getAttribute('data-media-id');
+            var dataUrl = mediaCache[mediaId];
+            if (!dataUrl) return;
+
+            if (dataUrl.indexOf('data:image') === 0) {
+                var img = document.createElement('img');
+                img.src = dataUrl;
+                img.alt = 'Foto';
+                img.style.cursor = 'pointer';
+                img.onclick = function() { window._downloadMediaById(mediaId, 'foto_' + mediaId + '.jpg'); };
+                ph.parentNode.replaceChild(img, ph);
+            } else if (dataUrl.indexOf('data:audio') === 0) {
+                var audio = document.createElement('audio');
+                audio.controls = true;
+                audio.src = dataUrl;
+                audio.style.width = '100%';
+                audio.style.maxWidth = '300px';
+                ph.parentNode.replaceChild(audio, ph);
+            }
+        });
+    }
+
+    // Função de download individual
+    window._downloadMediaById = function(id, filename) {
+        var dataUrl = mediaCache[id];
+        if (!dataUrl) { alert('Mídia não encontrada.'); return; }
+        var a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = filename || id;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
+    // Função de download em lote
+    window._downloadAllMedia = function() {
+        var ids = Object.keys(mediaCache);
+        if (ids.length === 0) { alert('Nenhuma mídia disponível.'); return; }
+        var count = 0;
+        ids.forEach(function(id) {
+            setTimeout(function() {
+                var dataUrl = mediaCache[id];
+                var ext = dataUrl.indexOf('data:image') === 0 ? '.jpg' : '.wav';
+                var filename = id + ext;
+                var a = document.createElement('a');
+                a.href = dataUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                count++;
+            }, count * 300);
+        });
+        alert('Baixando ' + ids.length + ' arquivo(s)...');
+    };
+
+    // Inicializa ao carregar
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadMediaChunks);
+    } else {
+        loadMediaChunks();
+    }
+})();
+<\/script>
+
+</body>
+</html>`;
+}
+
+// ==================== PRINT / SHARE / DOWNLOAD ====================
+function printReport() {
+    const content = document.getElementById('reportContent').innerHTML;
+    const printWin = window.open('', '_blank');
+    printWin.document.write(`
+        <!DOCTYPE html><html><head><title>Checklist</title>
+        <style>
+            body { font-family: sans-serif; padding: 20px; }
+            .report-header-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+            .report-section { margin-bottom: 16px; }
+            .report-section h4 { color: #007AFF; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 8px; }
+            .report-item { padding: 4px 0; font-size: 13px; }
+            .report-item .status { display: inline-block; width: 16px; height: 16px; border-radius: 3px; text-align: center; font-size: 10px; color: white; line-height: 16px; }
+            .report-item .status.ok { background: #34C759; }
+            .report-item .status.no { background: #FF3B30; }
+            .report-photos img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin: 2px; }
+            .report-audios audio { height: 28px; }
+            .report-obs { font-size: 12px; color: #666; font-style: italic; margin-left: 22px; }
+            .btn, .media-download-btn, .btn-download-all { display: none !important; }
+        </style></head><body>${content}</body></html>
+    `);
+    printWin.document.close();
+    setTimeout(() => printWin.print(), 500);
 }
 
 async function shareReportHTML() {
-    const htmlBody = window._reportHTMLBody;
-    const dados = window._reportData;
-    if (!htmlBody) { showToast('❌ Gere o relatório primeiro'); return; }
     try {
-        showToast('📦 Preparando arquivo...');
-        const fullHTML = buildFullReportHTML(htmlBody, dados);
-        const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
-        const fileName = 'checklist_' + (dados.cliente || 'cliente').replace(/\s+/g, '_') + '_' + (dados.placa || 'placa').replace(/\s+/g, '_') + '.html';
-        const file = new File([blob], fileName, { type: 'text/html' });
+        const htmlCompleto = buildStandaloneHTML(window._reportHTML, window._mediaCache, window._reportDados, window._reportStats);
+        const blob = new Blob([htmlCompleto], { type: 'text/html' });
+        const file = new File([blob], 'checklist_veicular.html', { type: 'text/html' });
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
-                title: 'Checklist ' + dados.cliente + ' - ' + dados.placa,
-                text: '📋 Relatório com ' + dados.totalPhotos + ' foto(s), ' + dados.totalVideos + ' vídeo(s) e ' + dados.totalAudios + ' áudio(s)',
-                files: [file]
+                files: [file],
+                title: 'Checklist Veicular',
+                text: `Checklist de ${window._reportDados.cliente} - ${window._reportDados.data}`
             });
             showToast('✅ Compartilhado!');
-            return;
+        } else {
+            // Fallback: download
+            downloadReportHTML();
+            showToast('📥 Download iniciado (compartilhamento não suportado)');
         }
-        downloadReportHTML();
-        showToast('💾 Relatório baixado! Compartilhe manualmente.');
     } catch (err) {
         if (err.name !== 'AbortError') {
-            console.error('Erro:', err);
+            console.error(err);
             downloadReportHTML();
-            showToast('💾 Relatório baixado!');
+            showToast('📥 Download iniciado');
         }
     }
 }
 
-// ============================================================
-// 🔨 Monta HTML completo para download/compartilhamento
-// Usa BASE64 para embutir as mídias - elimina problemas com caracteres especiais
-// ============================================================
-function buildFullReportHTML(bodyHTML, dados) {
-    var mediaJSON = '{}';
-    try {
-        mediaJSON = JSON.stringify(window._reportMediaCache || {});
-    } catch(e) {
-        console.error('Erro ao serializar cache:', e);
-    }
-
-    // Codifica o JSON em base64 para evitar qualquer problema com caracteres especiais
-    var mediaBase64 = btoa(unescape(encodeURIComponent(mediaJSON)));
-
-    // Script que será embutido no HTML exportado
-    var embeddedScript =
-        '(function() {\n' +
-        '  var mediaEl = document.getElementById("__mb_media_b64__");\n' +
-        '  if (mediaEl) {\n' +
-        '    try {\n' +
-        '      var jsonStr = decodeURIComponent(escape(atob(mediaEl.textContent.trim())));\n' +
-        '      window._reportMediaCache = JSON.parse(jsonStr);\n' +
-        '    } catch(e) {\n' +
-        '      window._reportMediaCache = {};\n' +
-        '      console.error("Erro ao carregar mídias:", e);\n' +
-        '    }\n' +
-        '  } else {\n' +
-        '    window._reportMediaCache = {};\n' +
-        '  }\n' +
-        '\n' +
-        '  window.downloadMediaById = function(mediaId, fileName) {\n' +
-        '    var dataUrl = window._reportMediaCache[mediaId];\n' +
-        '    if (!dataUrl) { alert("Mídia não encontrada neste relatório."); return; }\n' +
-        '    try {\n' +
-        '      var a = document.createElement("a");\n' +
-        '      a.href = dataUrl;\n' +
-        '      a.download = fileName;\n' +
-        '      a.style.display = "none";\n' +
-        '      document.body.appendChild(a);\n' +
-        '      a.click();\n' +
-        '      setTimeout(function(){ document.body.removeChild(a); }, 300);\n' +
-        '    } catch(err) {\n' +
-        '      try { window.open(dataUrl, "_blank"); } catch(e2) {\n' +
-        '        alert("Pressione e segure a mídia para salvar.");\n' +
-        '      }\n' +
-        '    }\n' +
-        '  };\n' +
-        '\n' +
-        '  window.shareMediaById = async function(mediaId, fileName, mimeType) {\n' +
-        '    var dataUrl = window._reportMediaCache[mediaId];\n' +
-        '    if (!dataUrl) { alert("Mídia não encontrada neste relatório."); return; }\n' +
-        '    try {\n' +
-        '      var res = await fetch(dataUrl);\n' +
-        '      var blob = await res.blob();\n' +
-        '      var file = new File([blob], fileName, { type: mimeType });\n' +
-        '      if (navigator.canShare && navigator.canShare({ files: [file] })) {\n' +
-        '        await navigator.share({ files: [file], title: fileName, text: "Evidencia - Checklist Mecanica Brasil" });\n' +
-        '        return;\n' +
-        '      }\n' +
-        '      if (navigator.share) {\n' +
-        '        try {\n' +
-        '          await navigator.share({ title: fileName, text: "Evidencia do Checklist" });\n' +
-        '          return;\n' +
-        '        } catch(e) { if (e.name === "AbortError") return; }\n' +
-        '      }\n' +
-        '      window.downloadMediaById(mediaId, fileName);\n' +
-        '    } catch(err) {\n' +
-        '      if (err.name !== "AbortError") {\n' +
-        '        window.downloadMediaById(mediaId, fileName);\n' +
-        '      }\n' +
-        '    }\n' +
-        '  };\n' +
-        '})();\n';
-
-    return '<!DOCTYPE html>\n<html lang="pt-BR">\n<head>\n' +
-        '<meta charset="UTF-8">\n' +
-        '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n' +
-        '<title>Checklist - ' + (dados.cliente || 'Cliente') + ' - ' + (dados.placa || 'Placa') + '</title>\n' +
-        '</head>\n<body>\n' +
-        bodyHTML +
-        '\n<div id="__mb_media_b64__" style="display:none;">' +
-        mediaBase64 +
-        '</div>\n' +
-        '<script>\n' +
-        embeddedScript +
-        '<\/script>\n</body>\n</html>';
+function downloadReportHTML() {
+    const htmlCompleto = buildStandaloneHTML(window._reportHTML, window._mediaCache, window._reportDados, window._reportStats);
+    const blob = new Blob([htmlCompleto], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `checklist_${(window._reportDados.cliente || 'veicular').replace(/\s+/g, '_')}_${window._reportDados.data.replace(/\//g, '-')}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('💾 HTML baixado com mídias inclusas!');
 }
 
-// ============ PERSISTÊNCIA ============
-function saveData() {
-    const dataToSave = { checklist: checklistData, classification: generalClassification, obs: generalObs };
-    try { localStorage.setItem('mb_checklist_v3', JSON.stringify(dataToSave)); }
-    catch (e) { showToast('⚠️ Armazenamento cheio'); }
-}
-
-async function loadData() {
-    try {
-        const raw = localStorage.getItem('mb_checklist_v3');
-        if (raw) {
-            const data = JSON.parse(raw);
-            checklistData = data.checklist || {};
-            generalClassification = data.classification || '';
-            generalObs = data.obs || '';
-            Object.keys(checklistData).forEach(key => {
-                const item = checklistData[key];
-                if (!item || typeof item !== 'object') {
-                    checklistData[key] = { status: null, photos: [], audios: [], videos: [] };
-                } else {
-                    if (!Array.isArray(item.photos)) item.photos = [];
-                    if (!Array.isArray(item.audios)) item.audios = [];
-                    if (!Array.isArray(item.videos)) item.videos = [];
-                }
-            });
-        }
-    } catch (e) {
-        console.error('Erro:', e);
-        checklistData = {};
-        generalClassification = '';
-        generalObs = '';
-    }
-}
-
-function resetAllData() {
-    if (!confirm('⚠️ Isso apagará TODOS os dados. Continuar?')) return;
-    showToast('🔄 Limpando dados...');
-    loadedImages = {};
-    window._reportMediaCache = {};
-    try {
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && (key.startsWith('mb_') || key.startsWith('media_'))) keysToRemove.push(key);
-        }
-        keysToRemove.forEach(k => localStorage.removeItem(k));
-    } catch(e) {}
-    checklistData = {};
-    generalClassification = '';
-    generalObs = '';
-    db = null;
-    useIndexedDB = true;
-    try {
-        if (window.indexedDB) {
-            const delReq = indexedDB.deleteDatabase('MBChecklistDB');
-            let done = false;
-            delReq.onsuccess = () => { if (!done) { done = true; location.reload(); } };
-            delReq.onerror = () => { if (!done) { done = true; location.reload(); } };
-            delReq.onblocked = () => { if (!done) { done = true; location.reload(); } };
-            setTimeout(() => { if (!done) { done = true; location.reload(); } }, 2000);
-        } else { location.reload(); }
-    } catch(e) { location.reload(); }
-}
-
-// ============ INICIALIZAÇÃO ============
-async function init() {
-    try { await openDB(); } catch (e) { useIndexedDB = false; }
-    try { await loadData(); } catch (e) { checklistData = {}; }
-    try {
-        renderTabs();
-        renderAllSections();
-        updateProgress();
-        switchTab(categories[0].id);
-    } catch (e) {
-        console.error('Erro:', e);
-        document.getElementById('content').innerHTML =
-            '<div style="text-align:center;padding:40px 20px;">' +
-                '<div style="font-size:50px;margin-bottom:16px;">⚠️</div>' +
-                '<div style="color:#f59e0b;font-weight:700;margin-bottom:8px;">Erro ao carregar</div>' +
-                '<button class="btn btn-primary" onclick="resetAllData()" style="width:auto;display:inline-block;padding:12px 28px;">🔄 Limpar e Reiniciar</button>' +
-            '</div>';
-        return;
-    }
-    try {
-        ['cliente', 'veiculo', 'placa', 'km'].forEach(id => {
-            const el = document.getElementById(id);
-            el.value = localStorage.getItem('mb_' + id) || '';
-            el.addEventListener('input', function() { localStorage.setItem('mb_' + id, el.value); });
-        });
-    } catch (e) {}
-    try {
-        document.getElementById('photoInput').addEventListener('change', handlePhotoSelected);
-        document.getElementById('audioInput').addEventListener('change', handleAudioSelected);
-        document.getElementById('videoInput').addEventListener('change', handleVideoSelected);
-    } catch (e) {}
-    try {
-        document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', function(e) {
-                if (e.target === this) { this.classList.remove('show'); document.body.classList.remove('no-scroll'); }
-            });
-        });
-    } catch (e) {}
-    showToast('✅ App carregado!');
+// ==================== UTILS ====================
+function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
 }
 
 function showToast(msg) {
     const toast = document.getElementById('toast');
     toast.textContent = msg;
     toast.classList.add('show');
-    clearTimeout(toast._timeout);
-    toast._timeout = setTimeout(() => toast.classList.remove('show'), 2500);
+    setTimeout(() => toast.classList.remove('show'), 2500);
 }
+
+// ==================== INIT ====================
+async function init() {
+    try {
+        await openDB();
+    } catch(e) {
+        console.error('Erro ao abrir DB:', e);
+    }
+    loadData();
+    renderCategories();
+    updateProgress();
+}
+
+// Click outside modal to close
+document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('show');
+    });
+});
 
 init();
 </script>
+
 </body>
 </html>
