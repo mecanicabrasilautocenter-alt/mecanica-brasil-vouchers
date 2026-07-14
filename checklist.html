@@ -318,7 +318,7 @@ let loadedImages = {};
 window._reportMediaCache = {};
 
 // ============================================================
-// 📥 DOWNLOAD - Função global que funciona no app E no HTML exportado
+// 📥 DOWNLOAD - Funciona tanto no app quanto no HTML exportado
 // ============================================================
 window.downloadMediaById = function(mediaId, fileName) {
     var dataUrl = null;
@@ -326,7 +326,7 @@ window.downloadMediaById = function(mediaId, fileName) {
         dataUrl = window._reportMediaCache[mediaId];
     }
     if (!dataUrl) {
-        alert('Mídia não encontrada no relatório. Tente gerar o relatório novamente.');
+        alert('Mídia não encontrada. Tente gerar o relatório novamente.');
         return;
     }
     try {
@@ -337,18 +337,19 @@ window.downloadMediaById = function(mediaId, fileName) {
         document.body.appendChild(a);
         a.click();
         setTimeout(function() { document.body.removeChild(a); }, 300);
+        if (typeof showToast === 'function') showToast('💾 Baixando: ' + fileName);
     } catch (err) {
         console.error('Erro ao baixar:', err);
         try {
             window.open(dataUrl, '_blank');
         } catch(e2) {
-            alert('Erro ao baixar. Tente pressionar e segurar a mídia para salvar.');
+            alert('Erro ao baixar. Pressione e segure a mídia para salvar.');
         }
     }
 };
 
 // ============================================================
-// 📤 COMPARTILHAR - Função global que funciona no app E no HTML exportado
+// 📤 COMPARTILHAR - Funciona tanto no app quanto no HTML exportado
 // ============================================================
 window.shareMediaById = async function(mediaId, fileName, mimeType) {
     var dataUrl = null;
@@ -356,7 +357,7 @@ window.shareMediaById = async function(mediaId, fileName, mimeType) {
         dataUrl = window._reportMediaCache[mediaId];
     }
     if (!dataUrl) {
-        alert('Mídia não encontrada no relatório. Tente gerar o relatório novamente.');
+        alert('Mídia não encontrada. Tente gerar o relatório novamente.');
         return;
     }
     try {
@@ -370,6 +371,7 @@ window.shareMediaById = async function(mediaId, fileName, mimeType) {
                 title: fileName,
                 text: '📋 Evidência - Checklist Mecânica Brasil'
             });
+            if (typeof showToast === 'function') showToast('✅ Enviado!');
             return;
         }
 
@@ -386,10 +388,12 @@ window.shareMediaById = async function(mediaId, fileName, mimeType) {
         }
 
         window.downloadMediaById(mediaId, fileName);
+        if (typeof showToast === 'function') showToast('💾 Baixado. Envie manualmente.');
     } catch (err) {
         if (err.name !== 'AbortError') {
             console.error('Erro ao compartilhar:', err);
             window.downloadMediaById(mediaId, fileName);
+            if (typeof showToast === 'function') showToast('💾 Baixado. Envie manualmente.');
         }
     }
 };
@@ -1164,8 +1168,8 @@ async function shareReportHTML() {
 
 // ============================================================
 // 🔨 Monta HTML completo para download/compartilhamento
-// As mídias são embutidas em um <script type="application/json">
-// separado para evitar problemas de parsing com </script> nos data URLs
+// As mídias são embutidas em <script type="application/json">
+// separado para evitar que </script> nos data URLs quebre o HTML
 // ============================================================
 function buildFullReportHTML(bodyHTML, dados) {
     var mediaJSON = '{}';
@@ -1175,9 +1179,10 @@ function buildFullReportHTML(bodyHTML, dados) {
         console.error('Erro ao serializar cache:', e);
     }
 
-    // Escapa </script> dentro do JSON para não quebrar o HTML
+    // Escapa </ para <\/ dentro do JSON (protege contra quebra de tag </script>)
     var safeMediaJSON = mediaJSON.replace(/<\//g, '<\\/');
 
+    // Script que será embutido no HTML exportado
     var embeddedScript =
         '(function() {\n' +
         '  var mediaEl = document.getElementById("__mb_media_data__");\n' +
@@ -1205,7 +1210,7 @@ function buildFullReportHTML(bodyHTML, dados) {
         '      setTimeout(function(){ document.body.removeChild(a); }, 300);\n' +
         '    } catch(err) {\n' +
         '      try { window.open(dataUrl, "_blank"); } catch(e2) {\n' +
-        '        alert("Erro ao baixar. Pressione e segure a mídia para salvar.");\n' +
+        '        alert("Pressione e segure a mídia para salvar.");\n' +
         '      }\n' +
         '    }\n' +
         '  };\n' +
