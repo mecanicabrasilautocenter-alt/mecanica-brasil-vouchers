@@ -289,8 +289,8 @@ body.no-scroll { position: fixed; width: 100%; overflow: hidden; }
 const categories = [
     { id: 'motor', name: 'Motor', icon: '🔧', items: ['Nível do óleo do motor','Estado do óleo','Vazamentos de óleo','Filtro de óleo','Filtro de ar','Filtro de combustível','Filtro de cabine','Correia de acessórios','Correia dentada/corrente','Tensionadores','Coxins do motor','Mangueiras do motor','Velas','Cabos/Bobinas de ignição']},
     { id: 'arrefecimento', name: 'Arrefecimento', icon: '❄️', items: ['Nível do líquido','Concentração do aditivo','Radiador','Tampa do reservatório','Reservatório','Mangueiras','Bomba d\'água','Ventoinha','Válvula termostática']},
-    { id: 'freios', name: 'Freios', icon: '🛑', items: ['Pastilhas dianteiras','Pastilhas traseiras','Lonas','Discos','Tambores','Fluido de freio','Mangueiras','Cilindros de roda','Freio de estacionamento']},
-    { id: 'suspensao', name: 'Suspensão', icon: '🔩', items: ['Amortecedores','Molas','Batentes','Coifas','Pivôs','Buchas das bandejas','Bieletas','Barra estabilizadora','Rolamentos']},
+    { id: 'freios', name: 'Freios', icon: '', items: ['Pastilhas dianteiras','Pastilhas traseiras','Lonas','Discos','Tambores','Fluido de freio','Mangueiras','Cilindros de roda','Freio de estacionamento']},
+    { id: 'suspensao', name: 'Suspensão', icon: '', items: ['Amortecedores','Molas','Batentes','Coifas','Pivôs','Buchas das bandejas','Bieletas','Barra estabilizadora','Rolamentos']},
     { id: 'direcao', name: 'Direção', icon: '🔄', items: ['Terminais','Axiais','Caixa de direção','Vazamentos','Folgas','Alinhamento']},
     { id: 'transmissao', name: 'Transmissão', icon: '⚡', items: ['Nível do óleo','Vazamentos','Homocinéticas','Coifas','Semi-eixos','Embreagem','ATF','Câmbio CVT/DSG']},
     { id: 'pneus', name: 'Pneus', icon: '🛞', items: ['Calibragem','Desgaste','Rodízio','Estepe','Macaco','Chave de roda']},
@@ -318,7 +318,7 @@ let loadedImages = {};
 window._reportMediaCache = {};
 
 // ============================================================
-// 📥 DOWNLOAD - Funciona tanto no app quanto no HTML exportado
+// 📥 DOWNLOAD
 // ============================================================
 window.downloadMediaById = function(mediaId, fileName) {
     var dataUrl = null;
@@ -349,7 +349,7 @@ window.downloadMediaById = function(mediaId, fileName) {
 };
 
 // ============================================================
-// 📤 COMPARTILHAR - Funciona tanto no app quanto no HTML exportado
+// 📤 COMPARTILHAR
 // ============================================================
 window.shareMediaById = async function(mediaId, fileName, mimeType) {
     var dataUrl = null;
@@ -369,7 +369,7 @@ window.shareMediaById = async function(mediaId, fileName, mimeType) {
             await navigator.share({
                 files: [file],
                 title: fileName,
-                text: '📋 Evidência - Checklist Mecânica Brasil'
+                text: ' Evidência - Checklist Mecânica Brasil'
             });
             if (typeof showToast === 'function') showToast('✅ Enviado!');
             return;
@@ -714,7 +714,7 @@ async function handleAudioSelected(e) {
     const file = e.target.files[0];
     if (!file || !currentAudioTarget) return;
     try {
-        showToast('⏳ Processando áudio...');
+        showToast(' Processando áudio...');
         const reader = new FileReader();
         reader.onload = async function(ev) {
             const audioId = 'audio-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
@@ -765,7 +765,7 @@ async function handlePhotoSelected(e) {
     const file = e.target.files[0];
     if (!file || !currentPhotoTarget) return;
     try {
-        showToast('⏳ Processando foto...');
+        showToast(' Processando foto...');
         const compressed = await compressImage(file);
         if (!compressed) { showToast('❌ Erro ao processar foto'); currentPhotoTarget = null; e.target.value = ''; return; }
         const photoId = 'photo-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
@@ -958,7 +958,7 @@ async function generateReport() {
 
                 let icon = '';
                 if (itemData.status === 'ok') icon = '✅';
-                else if (itemData.status === 'repair') icon = '🔧';
+                else if (itemData.status === 'repair') icon = '';
                 else if (itemData.status === 'critical') icon = '⚠️';
 
                 reportHTML += '<div class="rp-item">';
@@ -988,11 +988,11 @@ async function generateReport() {
                         if (dataUrl) {
                             const fname = 'video_' + videoId + '.mp4';
                             reportHTML += '<div class="rp-video-wrap">';
-                            reportHTML += '<div class="rp-video-label">📹 Vídeo - ' + item + '</div>';
+                            reportHTML += '<div class="rp-video-label"> Vídeo - ' + item + '</div>';
                             reportHTML += '<video class="rp-video" controls preload="metadata" src="' + dataUrl + '"></video>';
                             reportHTML += '<div class="rp-media-actions">';
                             reportHTML += '<button class="rp-action-btn rp-btn-download" onclick="window.downloadMediaById(\'' + videoId + '\',\'' + fname + '\')">💾 Baixar</button>';
-                            reportHTML += '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaById(\'' + videoId + '\',\'' + fname + '\',\'video/mp4\')">📤 Enviar</button>';
+                            reportHTML += '<button class="rp-action-btn rp-btn-whatsapp" onclick="window.shareMediaById(\'' + videoId + '\',\'' + fname + '\',\'video/mp4\')"> Enviar</button>';
                             reportHTML += '</div>';
                             reportHTML += '</div>';
                             totalVideos++;
@@ -1024,7 +1024,7 @@ async function generateReport() {
             reportHTML += '</div>';
         }
 
-        const classLabel = generalClassification === 'green' ? '🟢 Bom' :
+        const classLabel = generalClassification === 'green' ? ' Bom' :
                            generalClassification === 'yellow' ? '🟡 Requer Atenção' :
                            generalClassification === 'red' ? '🔴 Crítico' : '—';
 
@@ -1032,7 +1032,7 @@ async function generateReport() {
             '<div class="rp-info">' +
                 '<div class="rp-info-row"><span>Classificação</span><span>' + classLabel + '</span></div>' +
                 '<div class="rp-info-row"><span>📷 Fotos</span><span>' + totalPhotos + '</span></div>' +
-                '<div class="rp-info-row"><span>📹 Vídeos</span><span>' + totalVideos + '</span></div>' +
+                '<div class="rp-info-row"><span> Vídeos</span><span>' + totalVideos + '</span></div>' +
                 '<div class="rp-info-row"><span>🎤 Áudios</span><span>' + totalAudios + '</span></div>' +
             '</div>';
 
@@ -1168,8 +1168,7 @@ async function shareReportHTML() {
 
 // ============================================================
 // 🔨 Monta HTML completo para download/compartilhamento
-// As mídias são embutidas em <script type="application/json">
-// separado para evitar que </script> nos data URLs quebre o HTML
+// Usa BASE64 para embutir as mídias - elimina problemas com caracteres especiais
 // ============================================================
 function buildFullReportHTML(bodyHTML, dados) {
     var mediaJSON = '{}';
@@ -1179,16 +1178,17 @@ function buildFullReportHTML(bodyHTML, dados) {
         console.error('Erro ao serializar cache:', e);
     }
 
-    // Escapa </ para <\/ dentro do JSON (protege contra quebra de tag </script>)
-    var safeMediaJSON = mediaJSON.replace(/<\//g, '<\\/');
+    // Codifica o JSON em base64 para evitar qualquer problema com caracteres especiais
+    var mediaBase64 = btoa(unescape(encodeURIComponent(mediaJSON)));
 
     // Script que será embutido no HTML exportado
     var embeddedScript =
         '(function() {\n' +
-        '  var mediaEl = document.getElementById("__mb_media_data__");\n' +
+        '  var mediaEl = document.getElementById("__mb_media_b64__");\n' +
         '  if (mediaEl) {\n' +
         '    try {\n' +
-        '      window._reportMediaCache = JSON.parse(mediaEl.textContent);\n' +
+        '      var jsonStr = decodeURIComponent(escape(atob(mediaEl.textContent.trim())));\n' +
+        '      window._reportMediaCache = JSON.parse(jsonStr);\n' +
         '    } catch(e) {\n' +
         '      window._reportMediaCache = {};\n' +
         '      console.error("Erro ao carregar mídias:", e);\n' +
@@ -1247,12 +1247,12 @@ function buildFullReportHTML(bodyHTML, dados) {
         '<title>Checklist - ' + (dados.cliente || 'Cliente') + ' - ' + (dados.placa || 'Placa') + '</title>\n' +
         '</head>\n<body>\n' +
         bodyHTML +
-        '\n<script type="application/json" id="__mb_media_data__">\n' +
-        safeMediaJSON +
-        '\n</' + 'script>\n' +
+        '\n<div id="__mb_media_b64__" style="display:none;">' +
+        mediaBase64 +
+        '</div>\n' +
         '<script>\n' +
         embeddedScript +
-        '\n</' + 'script>\n</body>\n</html>';
+        '<\/script>\n</body>\n</html>';
 }
 
 // ============ PERSISTÊNCIA ============
