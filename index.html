@@ -537,25 +537,30 @@
   }
 
   // ===== EXTRAÇÃO DO NOME DO CLIENTE (CORRIGIDA) =====
-  // Suporta: "NOME // CNPJ" e "NOME // [FILIAL] // CNPJ" (com qualquer conteúdo/espaço entre as barras)
+  // Suporta: "NOME [] // CPF" (PF) e "NOME // VARIANTE [] // CNPJ" (PJ)
+  // CORREÇÃO: adicionados colchetes [] ao conjunto de caracteres para
+  // capturar nomes que contenham brackets vazios (ex: "LINDOMAR...PADILHA []")
   function extractClientName(text) {
     if (!text) return null;
 
+    // Conjunto de caracteres para nome: inclui [], comum em cadastros com campo vazio
+    const NAME_CHARS = '[A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9\\.\\-\\s\\[\\]]';
+
     // Padrão principal: NOME + "//" + qualquer bloco até encontrar o CPF/CNPJ
     const nameSegmentRegex = new RegExp(
-      `([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9\\.\\-\\s]{2,100}?)\\s*\\/\\/[\\s\\S]{0,150}?${DOC_SRC}`
+      `([A-ZÁÉÍÓÚÂÊÔÃÕÇ]${NAME_CHARS}{2,100}?)\\s*\\/\\/[\\s\\S]{0,150}?${DOC_SRC}`
     );
     let m = text.match(nameSegmentRegex);
     if (m && m[1]) return cleanName(m[1]);
 
     // Fallback: rótulo explícito "Cliente:"
-    m = text.match(/Cliente\s*[:\-]?\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9\.\-\s]{4,100})/i);
+    m = text.match(new RegExp(`Cliente\\s*[:\\-]?\\s*([A-ZÁÉÍÓÚÂÊÔÃÕÇ]${NAME_CHARS}{4,100})`, 'i'));
     if (m && m[1]) return cleanName(m[1]);
 
     // Fallback: primeira linha em CAIXA ALTA sem CPF/CNPJ na própria linha
     const linhas = text.split('\n').map(l => l.trim()).filter(Boolean);
     for (const linha of linhas) {
-      if (/^[A-ZÁÉÍÓÚÂÊÔÃÕÇ0-9\.\-\s]{5,100}$/.test(linha) && !/\d{2}\.\d{3}\.\d{3}/.test(linha)) {
+      if (new RegExp(`^${NAME_CHARS}{5,100}$`).test(linha) && !/\d{2}\.\d{3}\.\d{3}/.test(linha)) {
         return cleanName(linha);
       }
     }
@@ -565,10 +570,10 @@
   function cleanName(name) {
     if (!name) return null;
     let nome = name
-      .replace(/\[\]/g, '')
-      .replace(/\s{2,}/g, ' ')
-      .replace(/\/\/+$/, '')
-      .replace(/\[\s*\]$/, '')
+      .replace(/\[\]/g, '')        // remove colchetes vazios
+      .replace(/\s{2,}/g, ' ')     // colapsa espaços múltiplos
+      .replace(/\/\/+$/, '')       // remove barras no final
+      .replace(/\[\s*\]$/, '')     // remove [ ] no final
       .trim();
     nome = nome.replace(/[\.\-\s]+$/, (m) => (m.includes('.') ? '.' : ''));
     if (!nome) return null;
